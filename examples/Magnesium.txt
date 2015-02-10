@@ -1,0 +1,108 @@
+	Sensitivity to prior distributions:
+								application to Magnesium 
+								meta-analysis
+
+
+	model 
+	{
+	#	j indexes alternative prior distributions
+		for (j in 1:6) {
+			mu[j] ~ dunif(-10, 10)
+			OR[j] <- exp(mu[j])
+		
+	#	k indexes study number
+			for (k in 1:8) {
+				theta[j, k] ~ dnorm(mu[j], inv.tau.sqrd[j])
+				rtx[j, k] ~ dbin(pt[j, k], nt[k])
+				rtx[j, k] <- rt[k]
+				rcx[j, k] ~ dbin(pc[j, k], nc[k])
+				rcx[j, k] <- rc[k]
+				logit(pt[j, k]) <- theta[j, k] + phi[j, k]
+				phi[j, k] <- logit(pc[j, k])
+				pc[j, k] ~ dunif(0, 1)
+			}
+		}
+		
+	#	k  again indexes study number
+		for (k in 1:8) {
+			# log-odds ratios:
+			y[k] <- log(((rt[k] + 0.5) / (nt[k] - rt[k] + 0.5)) / ((rc[k] + 0.5) / (nc[k] - rc[k] + 0.5)))
+	# 	variances & precisions:
+			sigma.sqrd[k] <- 1 / (rt[k] + 0.5) + 1 / (nt[k] - rt[k] + 0.5) + 1 / (rc[k] + 0.5) + 
+						1 / (nc[k] - rc[k] + 0.5)
+			prec.sqrd[k] <- 1 / sigma.sqrd[k]
+		}
+		s0.sqrd <- 1 / mean(prec.sqrd[1:8])
+
+	# Prior 1: Gamma(0.001, 0.001) on inv.tau.sqrd
+
+		inv.tau.sqrd[1] ~ dgamma(0.001, 0.001)
+		tau.sqrd[1] <- 1 / inv.tau.sqrd[1]
+		tau[1] <- sqrt(tau.sqrd[1])
+
+	# Prior 2: Uniform(0, 50) on tau.sqrd
+
+		tau.sqrd[2] ~ dunif(0, 50)
+		tau[2] <- sqrt(tau.sqrd[2])
+		inv.tau.sqrd[2] <- 1 / tau.sqrd[2]
+
+	# Prior 3: Uniform(0, 50) on tau
+
+		tau[3] ~ dunif(0, 50)
+		tau.sqrd[3] <- tau[3] * tau[3]
+		inv.tau.sqrd[3] <- 1 / tau.sqrd[3]
+
+	# Prior 4: Uniform shrinkage on tau.sqrd
+
+		B0 ~ dunif(0, 1)
+		tau.sqrd[4] <- s0.sqrd * (1 - B0) / B0
+		tau[4] <- sqrt(tau.sqrd[4])
+		inv.tau.sqrd[4] <- 1 / tau.sqrd[4]
+
+	# Prior 5: Dumouchel on tau
+		
+		D0 ~ dunif(0, 1)
+		tau[5] <- sqrt(s0.sqrd) * (1 - D0) / D0
+		tau.sqrd[5] <- tau[5] * tau[5]
+		inv.tau.sqrd[5] <- 1 / tau.sqrd[5]
+
+	# Prior 6: Half-Normal on tau.sqrd
+
+		p0 <- phi(0.75) / s0.sqrd
+		tau.sqrd[6] ~ dnorm(0, p0)C(0, )
+		tau[6] <- sqrt(tau.sqrd[6])
+		inv.tau.sqrd[6] <- 1 / tau.sqrd[6]
+
+	}
+
+
+Data	( click to open )
+
+Inits for chain 1		Inits for chain 2	 ( click to open )
+	
+
+Results for 6 different prior distributions on the random-effects variance:
+
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	OR[1]	0.4733	0.1516	0.003591	0.1959	0.4709	0.7655	2001	20000
+	OR[2]	0.4231	0.2567	0.006416	0.1063	0.3871	0.9769	2001	20000
+	OR[3]	0.4379	0.1843	0.005731	0.146	0.4233	0.8126	2001	20000
+	OR[4]	0.4648	0.1359	0.004725	0.2169	0.4613	0.7375	2001	20000
+	OR[5]	0.4792	0.1624	0.006243	0.2126	0.4756	0.7783	2001	20000
+	OR[6]	0.4486	0.1447	0.004673	0.2108	0.4321	0.7546	2001	20000
+	tau[1]	0.5267	0.3833	0.01159	0.04487	0.454	1.473	2001	20000
+	tau[2]	1.13	0.6169	0.02279	0.3549	0.985	2.784	2001	20000
+	tau[3]	0.8023	0.514	0.02051	0.08684	0.7085	2.099	2001	20000
+	tau[4]	0.494	0.2665	0.009859	0.1197	0.4456	1.141	2001	20000
+	tau[5]	0.5142	0.3508	0.01583	0.02291	0.4627	1.365	2001	20000
+	tau[6]	0.5584	0.1972	0.007635	0.1575	0.5602	0.9354	2001	20000
+
+
+	
+Note: Uniform prior on variance increases uncertainty about the mean treatment effect.
+
+
+
+
+

@@ -1,0 +1,68 @@
+	LeukFr: Cox regression with
+			random effects
+
+Freireich et al (1963)'s data presented in the Leuk example actually arise via a paired design. Patients were matched according to their remission status (partial or complete). One patient from each pair received the drug 6-MP whilst the other received the placebo. We may introduce an additional vector (called pair) in the BUGS data file to indicate each of the 21 pairs of patients.
+
+We model the potential 'clustering' of failure times within pairs of patients by introducing a group-specific random effect or frailty term into the proportional hazards model. Using the counting process notation introduced in the Leuk example, this gives
+
+
+	Ii (t) dt	=	Yi (t) exp( b' zi + bpairi ) dL0(t)	i = 1,...,42;	pairi = 1,...,21
+	bpairi	~	 Normal(0, t)  
+
+A non-informative Gamma prior is assumed for t, the precision of the frailty parameters. Note that the above 'additive' formualtion of the frailty model is equivalent to assuming multiplicative frailties with a log-Normal population distibution. Clayton (1991) discusses the Cox proportional hazards model with multiplicative frailties, but assumes a Gamma population distribution. 
+
+The modified BUGS code needed to include a fraility term in the Leuk example is shown below
+
+	model
+	{
+	# Set up data
+		for(i in 1 : N) {
+			for(j in 1 : T) {
+	# risk set = 1 if obs.t >= t
+				Y[i, j] <- step(obs.t[i] - t[j] + eps) 
+	# counting process jump = 1 if obs.t in [ t[j], t[j+1] )
+	#                      i.e. if t[j] <= obs.t < t[j+1]
+				dN[i, j] <- Y[i, j ] *step(t[j+1] - obs.t[i] - eps)*fail[i] 
+			}
+		}
+	# Model 
+		for(j in 1 : T) {
+			for(i in 1 : N) {
+				dN[i, j]   ~ dpois(Idt[i, j])              
+				Idt[i, j] <- Y[i, j] * exp(beta * Z[i]+b[pair[i]]) * dL0[j]                             
+			}                             
+			dL0[j] ~ dgamma(mu[j], c)
+			mu[j] <- dL0.star[j] * c    # prior mean hazard
+	# Survivor function = exp(-Integral{l0(u)du})^exp(beta * z)    
+			S.treat[j] <- pow(exp(-sum(dL0[1 : j])), exp(beta * -0.5))
+			S.placebo[j] <- pow(exp(-sum(dL0[1 : j])), exp(beta * 0.5))	
+		}
+		for(k in 1 : Npairs) {
+			b[k] ~ dnorm(0.0, tau);
+		}
+		tau ~ dgamma(0.001, 0.001)
+		sigma <- sqrt(1 / tau)
+		c <- 0.001   r <- 0.1 
+		for (j in 1 : T) {  
+			dL0.star[j] <- r * (t[j+1]-t[j])  
+		} 
+		beta ~ dnorm(0.0,0.000001)                
+	}
+
+
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+
+Results 
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	beta	1.59	0.4361	0.009325	0.7675	1.581	2.472	5001	20000
+	sigma	0.2106	0.1887	0.01093	0.02831	0.1447	0.7048	5001	20000
+
+
+

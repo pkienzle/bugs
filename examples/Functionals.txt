@@ -1,0 +1,39 @@
+	Functionals: integration and
+			algebraic equations
+
+In the BUGS language logical nodes can be functions of other logical nodes. Sometimes a logical node is needed that depends on another logical node evaluated at arbitrary points. One example is an definite integral and another is an algebraic equation. We call these more general logical nodes "functionals" and introduce a special notation to describe them. A slot in a logical node that has a F(x) parameter is able to ask the F(x) logical node to be evaluated at any value of its special argument z. 
+
+Two examples:  
+	integral(F(x), lower, upper, tol)  is functional that evaluates the definite integral of F(x) with 
+	respect to x between lower and upper with an accuracy of tol, 
+
+	solution(F(x), lower, upper, tol)  finds a solution of the algebraic equation F(x) = 0 lying
+	between lower and upper with accuracy tol.
+
+In the simple model the first two functionals do not depend on any stochastic nodes and hence reduce to constants. Set the prec field in the "Display options" to 10 and then use the "Node info..."  tool to see the values of int, sol and zero.
+
+			 int      1.0
+			sol     0.3459548158
+			zero      -6.9388939E-17
+
+The third functional depends on a stochastic variable limit and so changes it value as limit changes.
+
+	model{
+		F(x[1]) <- cos(x[1])
+		int <- integral(F(x[1]), 0, halfPi, 1.0E-6)
+		halfPi <- 3.141592659 / 2
+	
+		sol <- solution(F(x[2]), 0, 1, 1.0E-6)
+		F(x[2]) <- x[2] * x[2] - pow(1 - x[2], 5)
+		zero <- sol * sol - pow(1 - sol, 5)
+	
+		int1 <- integral(F(x[3]), 0, limit, 1.0E-6)
+		F(x[3]) <- cos(x[3]) * cos(x[3]) + sin(x[3]) * sin(x[3])
+		limit ~ dunif(0, 1)
+	}
+	
+	
+Inits list(limit = 0.5)
+	
+
+

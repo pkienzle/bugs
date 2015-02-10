@@ -1,0 +1,98 @@
+		Beetles: choice of link function
+
+	Dobson (1983) analyses binary dose-response data published by Bliss (1935), in which the numbers of beetles killed after 5 hour exposure to carbon disulphide at N = 8 different concentrations are recorded:
+
+
+	Concentration (xi)		Number of beetles (ni)	Number killed (ri)
+	                  ______________________________________________________		
+	 1.6907		59 	6
+	1.7242		60	13
+	1.7552		62	18
+	1.7842		56	28
+	1.8113		63	52
+	1.8369		59	52
+	1.8610		62	61
+	1.8839		60	60 
+	
+
+We assume that the observed number of deaths ri at each concentration xi is binomial with sample size ni and true rate pi. Plausible models for pi include the logistic, probit and extreme value (complimentary log-log) models, as follows
+
+		pi = exp(a + bxi) / (1 + exp(a + bxi)
+		
+		pi = Phi(a + bxi)
+		
+		pi = 1 - exp(-exp(a + bxi))  
+
+The corresponding graph is shown below:
+
+	
+
+	model
+	{
+		for( i in 1 : N ) {
+			r[i] ~ dbin(p[i],n[i])
+			cloglog(p[i]) <- alpha.star + beta * (x[i] - mean(x[]))
+			rhat[i] <- n[i] * p[i]
+			cumulative.r[i] <- cumulative(r[i], r[i])
+		}
+		alpha <- alpha.star - beta * mean(x[])
+		beta ~ dnorm(0.0,0.001)
+		alpha.star ~ dnorm(0.0,0.001)	
+	}
+	
+
+Data ( click to open )
+
+
+Inits for chain 1		Inits for chain 2( click to open )
+
+
+Results 
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+Logit model
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha	-60.76	5.172	0.06723	-71.41	-60.59	-51.19	1001	10000
+	beta	34.29	2.906	0.03792	28.92	34.19	40.24	1001	10000
+	rhat[1]	3.565	0.9533	0.01123	1.945	3.491	5.633	1001	10000
+	rhat[2]	9.936	1.696	0.02053	6.814	9.894	13.41	1001	10000
+	rhat[3]	22.47	2.131	0.02755	18.31	22.44	26.65	1001	10000
+	rhat[4]	33.85	1.78	0.02511	30.34	33.85	37.27	1001	10000
+	rhat[5]	50.01	1.66	0.02357	46.65	50.04	53.14	1001	10000
+	rhat[6]	53.2	1.107	0.01516	50.88	53.26	55.2	1001	10000
+	rhat[7]	59.13	0.7358	0.009744	57.52	59.21	60.39	1001	10000
+	rhat[8]	58.68	0.4248	0.00548	57.72	58.74	59.36	1001	10000
+
+
+Probit model
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha	-34.92	2.648	0.05351	-40.22	-34.91	-29.67	1001	10000
+	beta	19.72	1.488	0.03027	16.8	19.72	22.71	1001	10000
+	rhat[1]	3.493	1.051	0.01993	1.803	3.357	5.899	1001	10000
+	rhat[2]	10.84	1.724	0.03259	7.745	10.71	14.48	1001	10000
+	rhat[3]	23.55	1.913	0.03859	19.87	23.5	27.28	1001	10000
+	rhat[4]	33.83	1.583	0.03603	30.72	33.86	36.91	1001	10000
+	rhat[5]	49.58	1.594	0.03781	46.45	49.64	52.59	1001	10000
+	rhat[6]	53.25	1.141	0.02664	50.83	53.32	55.27	1001	10000
+	rhat[7]	59.58	0.7427	0.01694	57.9	59.66	60.79	1001	10000
+	rhat[8]	59.16	0.3707	0.008289	58.26	59.22	59.69	1001	10000
+
+
+
+Extreme value (cloglog) model
+
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha	-39.74	3.139	0.07305	-46.02	-39.71	-33.51	1001	10000
+	beta	22.13	1.744	0.04043	18.7	22.11	25.61	1001	10000
+	rhat[1]	5.627	1.103	0.02682	3.727	5.524	8.035	1001	10000
+	rhat[2]	11.28	1.557	0.03782	8.472	11.2	14.6	1001	10000
+	rhat[3]	20.91	1.869	0.04466	17.37	20.87	24.73	1001	10000
+	rhat[4]	30.31	1.671	0.03726	27.07	30.32	33.56	1001	10000
+	rhat[5]	47.72	1.759	0.03552	44.19	47.74	51.2	1001	10000
+	rhat[6]	54.06	1.234	0.0248	51.47	54.13	56.29	1001	10000
+	rhat[7]	61.02	0.5314	0.01104	59.73	61.12	61.76	1001	10000
+	rhat[8]	59.92	0.09602	0.002058	59.65	59.95	60.0	1001	10000
+

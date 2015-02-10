@@ -1,0 +1,34 @@
+	Asia: expert system
+
+Evidence propagation
+
+Lauritzen and Spiegelhalter (1988) introduce a fictitious "expert system" representing the diagnosis of a patient presenting to a chest clinic, having just come back from a trip to Asia and showing dyspnoea (shortness-of-breath). The BUGS code is shown  below and the conditional probabilities used are given in Lauritzen and Spiegelhalter (1988). Note the use of max  to do the logical-or. The dcat distribution is used to sample values with domain (1,2) with probability distribution given by the relevant entries in the conditional probability
+tables. 
+  
+
+	model
+	{
+		smoking ~ dcat(p.smoking[1:2])
+		tuberculosis ~ dcat(p.tuberculosis[asia,1:2])
+		lung.cancer ~ dcat(p.lung.cancer[smoking,1:2])
+		bronchitis ~ dcat(p.bronchitis[smoking,1:2])
+		either <- max(tuberculosis,lung.cancer)
+		xray ~ dcat(p.xray[either,1:2])
+		dyspnoea ~ dcat(p.dyspnoea[either,bronchitis,1:2])
+	}
+
+
+Data ( click to open )
+
+Inits for chain 1		Inits for chain 2	( click to open )
+
+Results 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	bronchitis	1.815	0.3881	0.001938	1.0	2.0	2.0	5001	100000
+	either	1.181	0.3847	0.002014	1.0	1.0	2.0	5001	100000
+	lung.cancer	1.1	0.2995	0.001643	1.0	1.0	2.0	5001	100000
+	smoking	1.626	0.4839	0.002182	1.0	2.0	2.0	5001	100000
+	tuberculosis	1.086	0.2798	0.001451	1.0	1.0	2.0	5001	100000
+	xray	1.218	0.4129	0.00191	1.0	1.0	2.0	5001	100000
+

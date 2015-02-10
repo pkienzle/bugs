@@ -1,0 +1,88 @@
+
+ Voles: estimating the size of a 		
+					closed population using the data
+					augmentation technique
+ 
+					
+					(contributed by Andy Royle)
+
+Estimating the size of a closed population is a classical problem in statistical ecology. We consider the simplest of a huge class of models, referred to colloquially as "Model M0" in the jargon of capture-recapture.  We provide a Bayesian analysis of this model based on data augmentation. Data augmentation can be used to analyze any capture-recapture model in which the population size, N,  is unknown.
+
+The standard design subjects a demograph population of size N to repeated sampling. Let J denote the number of sample occasions. The observations are the number of encounters (out of J samples) on each of n individually recognizable or marked individuals, yi for i =1, 2,..., nind. The problem is to estimate the size of the population N = nind + n0, where n0 is the number of individuals not captured.  
+
+If we knew N, then the model for the observed data yi would simply be that:
+
+     yi ~ Binomial(p, J)      for  i= 1, 2,...., N
+
+In practice N is not known, and there are a number of ways for handling that in the model formulation, i.e., so that estimates of population size, N, can be obtained.
+
+Classical solution
+
+Since there are J +1 mutually exclusive outcomes (y = 0, 1, 2,..., J), the classical solution to the problem is to formulate the model for the encounter frequencies as a multinomial with unknown sample size N = nind + n0.  The cell probabilities are binomial cell probabilities of the form pj(1 - p)J - j. 
+
+We do not know if the multinomial model can be implemented directly in WinBUGS. Here we provide an analysis of this simplest of models for estimation of population size by a technique called data augmentation (see Royle, Dorazio and Link, 2007, J. Comp. and Graph. Stats.).
+
+Bayesian analysis based on data augmentation
+
+The two parameters are p and N (or n0) for which a natural prior specification is:
+				
+				p ~ uniform(0,1)      and 
+				N ~ uniform(0, M)    for some large M.
+			
+For implementation in WinBUGS it is convenient to use the following reparameterization of the uniform(0,M) prior:   N|M ~ Binomial(psi, M) and psi ~ uniform(0,1). This is a hierarchical representation of the uniform(0, M) prior in the sense that when we marginalize [N|M,psi] over [psi], we are left with a uniform(0, M) prior for N.  
+
+This prior implies the existence of a collection of latent indicator variables zi ~ Bernouli(psi)  for i = 1, 2, ...., M such that N = Szi.   To implement this model in WinBUGS we introduce excess zero "observations"  ynind +1 = 0,....., yM = 0,  the set of latent indicator variables zi ~ Bernouli(psi) and the model for the augmented data is:
+
+					zi ~ Bernoulli(psi)				   for i = 1, 2,..... M   [note M here not N]
+					yi ~ Binomial( zi * p, J)		for i = 1, 2, .... M   [note M here not N]
+					psi ~ uniform(0, 1)
+					p ~ uniform(0, 1)
+
+Interestingly, this is precisely a zero-inflated binomial model (see "Gentians" example). The population size parameter is a derived parameter:
+ 
+                   N =  Szi.
+
+Some discussion of data augmentation in this context can be found in Royle, Dorazio and Link (JCGS, 2007) as well as in Royle and Dorazio (Academic Press, 2008). Care should be taken in choice of M -- a value too small will cause posterior mass to pile up on the boundary N=M. As the intent of the discrete uniform prior is to express the absence of prior information, M should be increased in such cases. But note that too large a value of M yields increased computational burden.
+
+The model in the BUGS language is 
+
+	model {
+		# prior distributions
+		psi ~ dunif(0, 1)
+		p ~ dunif(0,1)
+		# zero-inflated binomial model for the augmented data
+		for(i in 1 : nind + nz){
+			z[i] ~ dbern(psi)
+			mu[i] <- z[i ]* p
+			y[i] ~ dbin(mu[i], J)
+		}
+		# N is a derived parameter under data augmentation
+		N<-sum(z[])
+	}
+
+Example analysis
+
+The data are capture-recapture data on voles (Microtus) (see Williams, Nichols and Conroy, Academic Press, 2002, for additional details and more extensive data). The study was conducted over J = 5 days and yielded encounter histories on nind = 56 individuals.  For this analysis, the data set was augmented with nz = 60 individuals. This example comes from Chapter 5 of Royle and Dorazio (Academic Press, 2008). 
+
+
+Data ( click to open )
+
+
+Inits for chain 1  Inits for chain 2  ( click to open )
+
+
+
+Results
+
+Two chains were run for 11000 iterations which produced the following estimates. Note that the posterior mode of N is on the boundary N = nind, a result of the high per sample detection probability (posterior mean of p = 0.63).
+
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	N	56.42	0.6781	0.004789	56.0	56.0	58.0	1001	20000
+	p	0.63	0.02936	2.216E-4	0.5718	0.6304	0.6866	1001	20000
+	psi	0.4866	0.04633	3.285E-4	0.3968	0.4861	0.5774	1001	20000
+
+
+
+
+

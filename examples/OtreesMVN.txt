@@ -1,0 +1,43 @@
+	Orange Trees: Non-linear growth
+			curve
+
+We repeat the Otrees example, replacing the 3 independent univariate Normal priors for each  f ik, k=1,2,3 by a multivariate Normal prior f i ~ MNV(m, T)
+
+	model {
+		for (i in 1:K) {
+			for (j in 1:n) {
+				Y[i, j] ~ dnorm(eta[i, j], tauC)
+				eta[i, j] <- phi[i, 1] / (1 + phi[i, 2] * exp(phi[i, 3] * x[j]))
+			}
+			phi[i, 1] <- exp(theta[i, 1])
+			phi[i, 2] <- exp(theta[i, 2]) - 1
+			phi[i, 3] <- -exp(theta[i, 3])
+			theta[i, 1:3] ~ dmnorm(mu[1:3], tau[1:3, 1:3])
+		}
+		mu[1:3] ~ dmnorm(mean[1:3], prec[1:3, 1:3])
+		tau[1:3, 1:3] ~ dwish(R[1:3, 1:3], 3)
+		sigma2[1:3, 1:3] <- inverse(tau[1:3, 1:3]) 
+		for (i in 1 : 3) {sigma[i] <- sqrt(sigma2[i, i]) }
+		tauC ~ dgamma(1.0E-3, 1.0E-3)
+		sigmaC <- 1 / sqrt(tauC)
+	}
+
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+
+Results 
+
+A 4000 iteration Metropolis adaptive phase plus 1000 update burn in followed by a further 10000 updates gave the parameter estimates:
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	mu[1]	5.268	0.1353	0.002557	4.997	5.268	5.535	5001	20000
+	mu[2]	2.194	0.162	0.005338	1.879	2.192	2.515	5001	20000
+	mu[3]	-5.887	0.1409	0.004828	-6.169	-5.887	-5.61	5001	20000
+	sigma[1]	0.261	0.1173	0.001881	0.1278	0.2345	0.55	5001	20000
+	sigma[2]	0.2661	0.1306	0.003348	0.1184	0.2339	0.593	5001	20000
+	sigma[3]	0.2264	0.1074	0.002382	0.1062	0.2007	0.4947	5001	20000
+	sigmaC	7.841	1.169	0.02945	5.92	7.713	10.49	5001	20000
+

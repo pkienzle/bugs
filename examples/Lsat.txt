@@ -1,0 +1,86 @@
+	LSAT: item response
+
+
+Section 6 of the Law School Aptitude Test (LSAT) is a 5-item multiple choice test; students score 1 on each item for the correct answer and 0 otherwise, giving R = 32 possible response patterns.Boch and Lieberman (1970) present data on LSAT for N = 1000 students, part of which is shown below.
+
+		Pattern index	          Item response pattern						   Freq (m)
+	________________________________________________
+		1		0	0	0	0	0		3
+		2		0	0	0	0	1		6
+		3		0	0	0	1	0		2
+		.		.	.	.	.	.		.
+		.		.	.	.	.	.		.
+		.		.	.	.	.	.		.
+		30		1	1	1	0	1		61
+		31		1 	1	1	1	0		28
+		32		1	1	1	1	1		298
+
+
+The above data may be analysed using the one-parameter Rasch model (see Andersen (1980), pp.253-254; Boch and Aitkin (1981)). The probability pjk that student j responds correctly to item k is assumed to follow a logistic function parameterized by an `item difficulty' or threshold parameter ak and a latent variable qj representing the student's underlying ability. The ability parameters are assumed to have a Normal distribution in the population of students. That is:
+
+	logit(pjk)  = qj - ak,  j = 1,...,1000; k = 1,...,5
+	
+	qj  ~  Normal(0, t)
+
+The above model is equivalent to the following random effects logistic regression:
+	
+	logit(pjk)  = bqj - ak,  j = 1,...,1000; k = 1,...,5
+	
+	qj  ~  Normal(0, 1)
+	
+where b corresponds to the scale parameter (b2 = t) of the latent ability distribution. We assume a half-normal distribution with small precision for b; this represents vague prior information but constrains b to be positive. Standard vague normal priors are assumed for the ak's. Note that the location of the ak's depend upon the mean of the prior distribution for qj which we have arbitrarily fixed to be zero. Alternatively, Boch and Aitkin ensure identifiability by imposing a sum-to-zero constraint on the ak's. Hence we calculate ak = ak - abar to enable comparision of the BUGS posterior parameter estimates with the Boch and Aitkin marginal maximum likelihood estimates.
+
+BUGS language for LSAT model
+
+
+	model
+	{
+	# Calculate individual (binary) responses to each test from multinomial data
+		for (j in 1 : culm[1]) {
+			for (k in 1 : T) {  
+				r[j, k] <- response[1, k] 
+			}
+		}
+		for (i in 2 : R) {
+			for (j in culm[i - 1] + 1 : culm[i]) {
+				for (k in 1 : T) {  
+					r[j, k] <- response[i, k] 
+				}
+			}
+		}
+	# Rasch model
+		for (j in 1 : N) {
+			for (k in 1 : T) {
+				logit(p[j, k]) <- beta * theta[j] - alpha[k]
+				r[j, k] ~ dbern(p[j, k])
+			}
+			theta[j] ~ dnorm(0, 1)
+		}
+	# Priors
+		for (k in 1 : T) {
+			alpha[k] ~ dnorm(0, 0.0001)
+			a[k] <- alpha[k] - mean(alpha[])
+		}
+		beta ~ dflat()T(0, )
+	}
+
+Note that the data are read into BUGS in the original multinomial format to economize on space and effort. The 5 times 1000 individual binary responses for each item and student are then created within BUGS using the index variable culm (read in from the data file), where culm[i] = cumulative number of students recording response patterns 1, 2, ..., i; i <= R.
+
+
+Data	( click to open )
+
+Inits for chain 1		Inits for chain 2	 ( click to open )
+	
+Results
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	a[1]	-1.26	0.1053	0.001266	-1.474	-1.26	-1.056	1001	10000
+	a[2]	0.4776	0.0698	8.158E-4	0.3412	0.4776	0.6168	1001	10000
+	a[3]	1.239	0.0687	9.116E-4	1.106	1.239	1.374	1001	10000
+	a[4]	0.1696	0.07325	8.07E-4	0.02688	0.1692	0.313	1001	10000
+	a[5]	-0.6256	0.08617	0.001083	-0.7961	-0.6239	-0.4563	1001	10000
+	beta	0.7582	0.07181	0.001678	0.6125	0.7601	0.895	1001	10000
+
+

@@ -1,0 +1,132 @@
+		Alligators: multinomial - logistic
+		 regression
+
+Agresti (1990) analyses a set of data on the feeding choice of  221 alligators, where the response measure for each alligator is one of 5 categories: fish, invertebrate, reptile, bird, other. Possible explanatory factors are the  length of alligator (two categories: <= 2.3 metres and > 2.3 metres), and  the lake (4 catgeories: Hancock, Oklawaha, Trafford, George). The full data is shown below.
+
+
+
+		  	    		Primary Food Choice
+	Lake	Size	 Fish	Invertebrate	Reptile	Bird	Other
+		______________________________________________________________		
+	Hancock 	<= 2.3	23	4	2	2	8
+        		> 2.3	7	0	1	3	5
+	Oklawaha	<=2.3	5	11	1	0	3
+        		> 2.3	13	8	6	1	0
+	Trafford 	<=2.3	5	11	2	1	5
+        		> 2.3	8	7	6	3	5
+	George	<=2.3	16	19	1	2	3
+		> 2.3	17	1	0	1	3
+
+Each combination of explanatory factors is assumed to give rise to a multinomial response with a logistic link, so that for lake i, size j, the observed vector of counts Xij. = Xij1,...,Xij5 has distribution
+
+		Xij. ~  Multinomial(pij.,nij) 
+		pijk   =  fijk / Sk fijk
+		fijk   =  eak + bik  + gjk
+  
+where nij = Sk Xijk, and a1, bi1, b1k, gj1, g1k = 0 for identifiability. This model is discussed in detail in the Classic BUGS manual (version 0.5) in the section on Multionomial LogisticModels. All unknown a's, b's , g's  are initially given independent "noninformative" priors. 
+
+The Classic BUGS manual (version 0.5) discusses two ways of fitting this model: directly in the form given above or by using the multinomial-Poisson transformation which will be somewhat more efficient.  Both techniques are illustrated in the code given below.  
+
+
+	model
+	{
+
+	#  PRIORS
+		alpha[1] <- 0;       # zero contrast for baseline food
+		for (k in 2 : K) { 
+			alpha[k] ~ dnorm(0, 0.00001) # vague priors
+		} 
+	# Loop around lakes:
+		for (k in 1 : K){  
+			beta[1, k] <- 0 
+		} # corner-point contrast with first lake 
+		for (i in 2 : I) {     
+			beta[i, 1] <- 0 ;  # zero contrast for baseline food
+			for (k in 2 : K){  
+				beta[i, k] ~ dnorm(0, 0.00001) # vague priors
+			} 
+		}
+	# Loop around sizes:
+		for (k in 1 : K){  
+			gamma[1, k] <- 0 # corner-point contrast with first size 
+		}  
+		for (j in 2 : J) {     
+			gamma[j, 1] <- 0 ;  # zero contrast for baseline food
+			for ( k in 2 : K){ 
+				gamma[j, k] ~ dnorm(0, 0.00001) # vague priors
+			} 
+		}
+
+	# LIKELIHOOD	
+		for (i in 1 : I) {     # loop around lakes
+			for (j in 1 : J) {     # loop around sizes
+
+	# Multinomial response
+	#     X[i,j,1 : K] ~ dmulti( p[i, j, 1 : K] , n[i, j]  )
+	#     n[i, j] <- sum(X[i, j, ])
+	#     for (k in 1 : K) {     # loop around foods
+	#        p[i, j, k]        <- phi[i, j, k] / sum(phi[i, j, ])
+	#        log(phi[i ,j, k]) <- alpha[k] + beta[i, k]  + gamma[j, k]
+	#       }
+
+	# Fit standard Poisson regressions relative to baseline
+				lambda[i, j] ~ dflat()	# vague priors 
+				for (k in 1 : K) {     # loop around foods
+					X[i, j, k] ~ dpois(mu[i, j, k])
+					log(mu[i, j, k]) <- lambda[i, j] + alpha[k] + beta[i, k]  + gamma[j, k]
+					cumulative.X[i, j, k] <- cumulative(X[i, j, k], X[i, j, k])
+				}
+			}  
+		}
+
+	# TRANSFORM OUTPUT TO ENABLE COMPARISON 
+	#  WITH AGRESTI'S RESULTS
+
+		for (k in 1 : K) {     # loop around foods
+			for (i in 1 : I) {     # loop around lakes
+				b[i, k] <- beta[i, k] - mean(beta[, k]);   # sum to zero constraint
+			}
+			for (j in 1 : J) {     # loop around sizes
+				g[j, k] <- gamma[j, k] - mean(gamma[, k]); # sum to zero constraint
+			}
+		}
+	}  
+
+Data	( click to open )
+
+
+Inits for chain 1		Inits for chain 2 ( click to open )
+
+
+Results 
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	b[1,2]	-1.83	0.4312	0.02522	-2.732	-1.804	-1.056	1001	10000
+	b[1,3]	-0.3825	0.6152	0.02296	-1.64	-0.3781	0.8085	1001	10000
+	b[1,4]	0.5577	0.5673	0.01318	-0.5421	0.5483	1.719	1001	10000
+	b[1,5]	0.2742	0.3523	0.009076	-0.4085	0.2684	0.9755	1001	10000
+	b[2,2]	0.8812	0.3331	0.01043	0.2306	0.8787	1.541	1001	10000
+	b[2,3]	0.9578	0.5207	0.009998	-0.0313	0.9476	2.007	1001	10000
+	b[2,4]	-1.263	1.02	0.01181	-3.685	-1.124	0.3479	1001	10000
+	b[2,5]	-0.6589	0.5433	0.009017	-1.811	-0.6336	0.3244	1001	10000
+	b[3,2]	1.054	0.3447	0.01175	0.405	1.05	1.747	1001	10000
+	b[3,3]	1.445	0.517	0.01172	0.5002	1.423	2.538	1001	10000
+	b[3,4]	0.9338	0.601	0.009841	-0.2385	0.923	2.134	1001	10000
+	b[3,5]	0.9858	0.3955	0.008537	0.2053	0.9842	1.769	1001	10000
+	b[4,2]	-0.1053	0.2952	0.009697	-0.6902	-0.1062	0.4788	1001	10000
+	b[4,3]	-2.02	0.9853	0.01282	-4.369	-1.877	-0.5193	1001	10000
+	b[4,4]	-0.2281	0.6148	0.009132	-1.476	-0.2198	0.9799	1001	10000
+	b[4,5]	-0.6012	0.4096	0.006119	-1.446	-0.5953	0.1813	1001	10000
+	g[1,2]	0.759	0.2064	0.005067	0.3658	0.7557	1.192	1001	10000
+	g[1,3]	-0.1946	0.3016	0.0087	-0.8038	-0.1849	0.3788	1001	10000
+	g[1,4]	-0.3324	0.3422	0.009134	-1.037	-0.3288	0.3353	1001	10000
+	g[1,5]	0.1775	0.2322	0.005409	-0.273	0.1759	0.6328	1001	10000
+	g[2,2]	-0.759	0.2064	0.005067	-1.191	-0.7557	-0.3654	1001	10000
+	g[2,3]	0.1946	0.3016	0.0087	-0.3787	0.1851	0.8039	1001	10000
+	g[2,4]	0.3324	0.3422	0.009134	-0.3337	0.3288	1.037	1001	10000
+	g[2,5]	-0.1775	0.2322	0.005409	-0.6319	-0.1759	0.2731	1001	10000
+
+
+

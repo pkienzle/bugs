@@ -1,0 +1,85 @@
+	Jaws: repeated measures analysis
+			of variance
+
+
+Elston and Grizzle (1962) present repeated measurements of ramus (jaw) bone height on a 
+cohort of 20 boys over an 18 month period: 
+
+
+
+				Age (in years) 
+	Subject		8.0	8.5	9.0	9.5
+	_________________________________		
+	1		47.8	48.8	49.0	49.7
+	2		46.4	47.3	47.7	48.4	
+	3		46.3	46.8	47.8	48.5	
+	.		.	.	.	.	
+	.		.	. 	.	.	
+	19		46.2	47.5	48.1	48.4	
+	20		46.3	47.6	51.3	51.8	
+	Mean		48.7	49.6	50.6	51.5	
+	Variance		  6.4   	  6.5	  6.9	  7.5	  
+
+Interest focuses on describing the average growth curve of the ramus bone. The 4 
+measurements Yi = {Yi1, Yi2, Yi3, Yi4} for each child i are assumed to be correlated and follow a multivariate normal  (MVN) distribution with unknown population mean vector m and precision matrix W. That is Yi ~ MVN(m, W)
+
+The following location models for the population mean m were fitted in turn:
+	E(mi)	=	b0	Constant height
+	E(mi)	=	b0 + b1 xj	Linear growth curve
+	E(mi)	=	b0 + b1 xj + b2 xj2 	Quadratic growth curve 
+
+where xj = age at jth measurement. Non-informative independent normal priors were specified for the regression coefficients b0, b1, and b2. The population precision matrix W was assumed to follow a Wishart(R, r) distribution. To represent vague prior knowledge, we chose the the degrees of freedom r  for this distribution to be as small as possible (i.e. 4, the rank of W). The scale matrix R was specified as a 4x4 diag(1) matrix which represents an assessment of the order of magnitude of the covariance matrix W-1 for Yi (see subsection on the use of the Wishart distribution in the "Multivariate normal nodes'' section of the Classic BUGS manual (version 0.50).  Note that except for cases with very few individuals, the choice of R has little effect on the posterior estimate of W-1 (Lindley, 1970).
+
+
+ BUGS language for the Jaws example
+
+
+	model
+	{
+		beta0 ~ dnorm(0.0, 0.001)
+		beta1 ~ dnorm(0.0, 0.001)
+		for (i in 1:N) {
+			Y[i, 1:M] ~ dmnorm(mu[], Omega[ , ]) 
+		}                                  
+		for(j in 1:M) { 
+			mu[j] <- beta0 + beta1* age[j]
+		}
+		Omega[1 : M , 1 : M]  ~ dwish(R[ , ], 4)
+		Sigma[1 : M , 1 : M] <- inverse(Omega[ , ])
+
+	}
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+Results  
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates	
+ 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	Sigma[1,1]	6.734	2.371	0.02577	3.533	6.298	12.69	1001	10000
+	Sigma[1,2]	6.528	2.337	0.02469	3.347	6.092	12.43	1001	10000
+	Sigma[1,3]	6.083	2.302	0.02447	2.951	5.649	11.9	1001	10000
+	Sigma[1,4]	5.838	2.322	0.02451	2.651	5.421	11.6	1001	10000
+	Sigma[2,1]	6.528	2.337	0.02469	3.347	6.092	12.43	1001	10000
+	Sigma[2,2]	6.845	2.398	0.02495	3.569	6.392	12.89	1001	10000
+	Sigma[2,3]	6.48	2.379	0.02512	3.229	6.034	12.47	1001	10000
+	Sigma[2,4]	6.246	2.403	0.02503	2.96	5.808	12.25	1001	10000
+	Sigma[3,1]	6.083	2.302	0.02447	2.951	5.649	11.9	1001	10000
+	Sigma[3,2]	6.48	2.379	0.02512	3.229	6.034	12.47	1001	10000
+	Sigma[3,3]	7.308	2.56	0.02694	3.813	6.844	13.73	1001	10000
+	Sigma[3,4]	7.294	2.621	0.02732	3.732	6.813	13.75	1001	10000
+	Sigma[4,1]	5.838	2.322	0.02451	2.651	5.421	11.6	1001	10000
+	Sigma[4,2]	6.246	2.403	0.02503	2.96	5.808	12.25	1001	10000
+	Sigma[4,3]	7.294	2.621	0.02732	3.732	6.813	13.75	1001	10000
+	Sigma[4,4]	7.898	2.792	0.02872	4.098	7.367	14.75	1001	10000
+	beta0	33.47	1.957	0.08681	29.57	33.5	37.21	1001	10000
+	beta1	1.894	0.2223	0.00995	1.472	1.892	2.337	1001	10000
+	mu[1]	48.63	0.5544	0.008422	47.52	48.63	49.7	1001	10000
+	mu[2]	49.57	0.5453	0.005006	48.48	49.57	50.63	1001	10000
+	mu[3]	50.52	0.5587	0.005356	49.4	50.52	51.61	1001	10000
+	mu[4]	51.47	0.5929	0.009045	50.29	51.47	52.64	1001	10000
+
+

@@ -1,0 +1,47 @@
+		Air: Berkson measurement error
+
+Whittemore and Keller (1988) use an approximate maximum likelihood approach to analyse the data shown below on reported respiratory illness versus exposure to nitrogen dioxide (NO2) in 103 children. Stephens and Dellaportas (1992) later use Bayesian methods to analyse the same data. 
+
+
+A discrete covariate zj (j = 1,2,3) representing NO2 concentration in the child's bedroom classified into 3 categories is used as a surrogate for true exposure. The nature of the measurement error relationship associated with this covariate is known precisely via a calibration study, and is given by
+
+	 xj  = a + b zj + ej     
+
+where a = 4.48, b = 0.76 and ej is a random element having normal distribution with zero mean and variance s2 (= 1/t) = 81.14. Note that this is a Berkson (1950) model of measurement error, in which the true values of the covariate are expressed as a function of the observed values. Hence the measurement error is independent of the latter, but is correlated with the true underlying covariate values. In the present example, the observed covariate zj takes values 10, 30 or 50 for j = 1, 2, or 3 respectively (i.e. the mid-point of each category), whilst xj is interpreted as the "true average value" of NO2 in group j. The response variable is binary, reflecting presence/absence of respiratory illness, and a logistic regression model is assumed. That is 
+
+  	 yj  ~  Binomial(pj, nj) 
+	logit(pj)  =  q1 + q2 xj  
+
+where pj is the probability of respiratory illness for children in the jth exposure group. The regression coefficients q1 and q2 are given vague independent normal priors. The graphical model is shown below:
+
+
+
+
+	model
+	{
+		for(j in 1 : J) {
+			y[j] ~ dbin(p[j], n[j])
+			logit(p[j]) <- theta[1] + theta[2] * X[j]
+			X[j] ~ dnorm(mu[j], tau)
+			mu[j] <- alpha + beta * Z[j]
+		}
+		theta[1] ~ dnorm(0.0, 0.001)
+		theta[2] ~ dnorm(0.0, 0.001)
+	}
+
+
+Data	( click to open )
+
+Inits for chain 1	Inits for chain 2	 ( click to open )
+
+Results 
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	X[1]	13.37	8.438	0.1849	-3.644	13.55	29.42	1001	10000
+	X[2]	27.36	7.365	0.1109	12.95	27.38	41.81	1001	10000
+	X[3]	41.05	8.655	0.1598	24.55	40.93	58.47	1001	10000
+	theta[1]	-0.9591	1.981	0.05857	-4.282	-0.6974	0.3374	1001	10000
+	theta[2]	0.04771	0.0813	0.002485	-0.002302	0.03844	0.1728	1001	10000
+

@@ -1,0 +1,7 @@
+		model {
+			for (i in 1:1000) {
+				y[i] ~ dt(0, 1, d)
+			}
+			d ~ dunif(2, 100)			# degrees of freedom must be at least two
+		}
+

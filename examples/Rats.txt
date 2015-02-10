@@ -1,0 +1,89 @@
+	Rats: a normal hierarchical model
+
+This example is taken from  section 6 of Gelfand et al (1990), and concerns 30 young rats whose weights were measured weekly for five weeks. Part of the data is shown below, where Yij is the weight of the ith rat measured at age xj.   
+
+
+		Weights Yij of rat i on day xj
+		 xj = 8	15	22	29 	36 
+	__________________________________		
+	Rat 1	151	199	246	283	320
+	Rat 2	145	199	249	293	354
+	.......
+	Rat 30	153	200	244	286	324 
+
+
+A plot of the 30 growth curves suggests some evidence of downward curvature.
+
+The model is essentially a random effects linear growth curve
+
+	Yij ~  Normal(ai + bi(xj - xbar), tc)
+
+	ai  ~  Normal(ac, ta)
+
+	bi  ~  Normal(bc, tb)
+
+where xbar = 22, and t represents the precision (1/variance) of a normal distribution. We note the absence of a parameter representing correlation between ai and bi unlike in Gelfand et al 1990. However, see the Birats example in Volume 2 which does explicitly model the covariance between ai   and bi. For now, we standardise the xj's around their mean to reduce dependence between ai and bi in their likelihood: in fact for the full balanced data, complete independence is achieved. (Note that, in general, prior independence does not force the posterior distributions to be independent).
+
+ac , ta , bc , tb , tc are given independent ``noninformative'' priors.  Interest particularly focuses on the intercept at zero time (birth), denoted a0 = ac - bc xbar.  
+
+Graphical model for rats example:
+
+
+
+BUGS language for rats example:
+
+
+	model
+	{
+		for( i in 1 : N ) {
+			for( j in 1 : T ) {
+				Y[i , j] ~ dnorm(mu[i , j],tau.c)
+				mu[i , j] <- alpha[i] + beta[i] * (x[j] - xbar)
+			}
+			alpha[i] ~ dnorm(alpha.c,alpha.tau)
+			beta[i] ~ dnorm(beta.c,beta.tau)
+		}
+		tau.c ~ dgamma(0.001,0.001)
+		sigma <- 1 / sqrt(tau.c)
+		alpha.c ~ dnorm(0.0,1.0E-6)	   
+		alpha.tau ~ dgamma(0.001,0.001)
+		beta.c ~ dnorm(0.0,1.0E-6)
+		beta.tau ~ dgamma(0.001,0.001)
+		alpha0 <- alpha.c - xbar * beta.c	
+	}
+
+Note the use of a very flat but conjugate  prior for the population effects: a locally uniform prior could also have been used.
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+(Note: the response data (Y) for the rats example can also be found in the file ratsy.odc in rectangular format. The covariate data (x) can be found in S-Plus format in file ratsx.odc. To load data from each of these files, focus the window containing the open data file before clicking on "load data" from the "Specification" dialog.)
+
+
+Results
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates:
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha0	106.6	3.666	0.04102	99.29	106.6	113.7	1001	10000
+	beta.c	6.186	0.1088	0.001316	5.971	6.187	6.398	1001	10000
+	sigma	6.092	0.4672	0.007633	5.254	6.06	7.095	1001	10000
+
+
+These results may be compared with Figure 5 of Gelfand et al 1990 --- we note that the mean gradient of independent fitted straight lines is 6.19.
+
+Gelfand et al 1990 also consider the problem of missing data, and delete the last observation of cases 6-10, the last two from 11-20, the last 3 from 21-25 and the last 4 from 26-30.  The appropriate data file is obtained by simply replacing data values by NA (see below). The model specification is unchanged, since the distinction between observed and unobserved quantities is made in the data file and not the model specification.
+
+Data ( click to open )
+
+Gelfand et al 1990 focus on the parameter estimates and the predictions for the final 4 observations on rat 26. These predictions are obtained automatically in BUGS by monitoring the relevant Y[] nodes. The following estimates were obtained:
+
+			mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	Y[26,2]	204.6	8.689	0.1145	187.6	204.7	221.4	1001	10000
+	Y[26,3]	250.2	10.21	0.1732	230.1	250.2	270.5	1001	10000
+	Y[26,4]	295.6	12.5	0.228	270.6	295.5	319.7	1001	10000
+	Y[26,5]	341.2	15.29	0.2936	310.7	341.3	370.9	1001	10000
+	beta.c	6.578	0.1497	0.003415	6.284	6.578	6.87	1001	10000
+
+We note that our estimate 6.58 of bc is substantially greater than that shown in Figure 6 of  Gelfand et al 1990.  However, plotting the growth curves indicates some curvature with steeper gradients at the beginning: the mean of the estimated gradients of the reduced data is 6.66, compared to 6.19 for the full data.  Hence we are inclined to believe our analysis.  The observed weights for rat 26 were 207, 257, 303 and 345, compared to our predictions of 204, 250, 295 and 341.

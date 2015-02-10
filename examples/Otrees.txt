@@ -1,0 +1,58 @@
+		Orange Trees: Non-linear growth
+			curve
+
+This dataset was originally presented by Draper and Smith (1981) and reanalysed by Lindstrom and Bates (1990). The data Yij consist of trunk circumference measurements recorded at time xj, j=1,...,7 for each of i = 1,..., 5 orange trees. We consider a logistic growth curve as follows:
+
+	Yij	~	Normal(hij, tc)
+	
+	hij	=		f i1
+				_______________
+				1 + f i2 exp( f i3 xj )
+				
+	q i1	=	log(f i1)	
+	q i2	=	log(f i2 + 1)	
+	q i3	=	log(-f i3)	
+
+The BUGS code is as follows
+
+	model {
+		for (i in 1:K) {
+			for (j in 1:n) {
+				Y[i, j] ~ dnorm(eta[i, j], tauC)
+				eta[i, j] <- phi[i, 1] / (1 + phi[i, 2] * exp(phi[i, 3] * x[j]))
+			}
+			phi[i, 1] <- exp(theta[i, 1])
+			phi[i, 2] <- exp(theta[i, 2]) - 1
+			phi[i, 3] <- -exp(theta[i, 3])
+			for (k in 1:3) {
+				theta[i, k] ~ dnorm(mu[k], tau[k])
+			}
+		}
+		tauC ~ dgamma(1.0E-3, 1.0E-3)
+		sigma.C <- 1 / sqrt(tauC)
+		var.C <- 1 / tauC
+		for (k in 1:3) {
+			mu[k] ~ dnorm(0, 1.0E-4)
+			tau[k] ~ dgamma(1.0E-3, 1.0E-3)
+			sigma[k] <- 1 / sqrt(tau[k])
+		}
+	}
+
+Data ( click to open )
+
+Inits for chain 1		 Inits for chain 2	( click to open )
+
+
+Results 
+
+The hybrid Metropolis algorithm is used to sample the theta parameters in this model. The step length used for this algorithm adapts for the first 4000 iterations and these samples are discarded from the summary statistics.  A  further 1000 update burn-in followed by 10000 updates gave the following parameter estimates:
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	mu[1]	5.253	0.1244	0.00237	5.007	5.254	5.505	15001	20000
+	mu[2]	2.218	0.1137	0.005027	1.999	2.227	2.433	15001	20000
+	mu[3]	-5.858	0.09592	0.004643	-6.048	-5.857	-5.686	15001	20000
+	sigma[1]	0.2359	0.1239	0.001806	0.1023	0.2054	0.5469	15001	20000
+	sigma[2]	0.1245	0.1126	0.004228	0.02446	0.0937	0.4044	15001	20000
+	sigma[3]	0.09705	0.08283	0.002275	0.02602	0.07677	0.2851	15001	20000
+	sigma.C	7.892	1.175	0.03214	5.977	7.76	10.57	15001	20000
+

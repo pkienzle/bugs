@@ -1,0 +1,126 @@
+	Leuk: Cox regression
+
+Several authors have discussed Bayesian inference for censored survival data where the integrated baseline hazard function is to be estimated non-parametrically Kalbfleisch (1978) ,Kalbfleisch and Prentice (1980), Clayton (1991), Clayton (1994).Clayton (1994) formulates the Cox model using the counting process notation introduced by Andersen and Gill (1982) and discusses estimation of the baseline hazard and regression parameters using MCMC methods. Although his approach may appear somewhat contrived, it forms the basis for extensions to random effect (frailty) models, time-dependent covariates, smoothed hazards, multiple events and so on. We show below how to implement this formulation of the Cox model in BUGS.
+
+For subjects i = 1,...,n, we observe processes Ni(t) which count the number of failures which have occurred up to time t. The corresponding intensity process Ii(t) is given by
+
+	Ii(t)dt  = E(dNi(t) | Ft-)
+	
+where dNi(t) is the increment of Ni over the small time interval [t, t+dt), and Ft- represents the available data just before time t. If subject i is observed to fail during this time interval, dNi(t) will take the value 1; otherwise dNi(t) = 0. Hence E(dNi(t) | Ft-)  corresponds to the probability of subject i failing in the interval [t, t+dt). As dt -> 0 (assuming time to be continuous) then this probability becomes the instantaneous hazard at time t for subject i. This is assumed to have the proportional hazards form	
+
+	Ii(t)  = Yi(t)l0(t)exp(bzi)
+	
+where Yi(t) is an observed process taking the value 1 or 0 according to whether or not subject i is observed at time t and l0(t)exp(bzi) is the familiar Cox regression model. Thus we have observed data D = Ni(t), Yi(t), zi; i = 1,..n and unknown parameters b and L0(t) = Integral(l0(u), u, t, 0), the latter to be estimated non-parametrically. 	
+
+The joint posterior distribution for the above model is defined by
+
+	P(b, L0() | D) ~ P(D | b, L0()) P(b) P(L0())
+	
+For BUGS, we need to specify the form of the likelihood P(D | b, L0()) and prior distributions for b and L0(). Under non-informative censoring, the likelihood of the data is proportional to	
+
+	 n
+	P[P Ii(t)dNi(t)] exp(- Ii(t)dt)
+	i = 1  t >= 0
+	
+	
+This is essentially as if the counting process increments dNi(t) in the time interval [t, t+dt) are independent Poisson random variables with means Ii(t)dt:	
+
+	dNi(t)  ~  Poisson(Ii(t)dt)
+	
+We may write	
+
+	Ii(t)dt  = Yi(t)exp(bzi)dL0(t)
+	
+where dL0(t) = L0(t)dt  is the increment or jump in the integrated baseline hazard function occurring during the time interval [t, t+dt). Since the conjugate prior for the Poisson mean is the gamma distribution, it would be convenient if L0() were a process in which the increments dL0(t) are distributed according to gamma distributions. We assume the conjugate independent increments prior suggested by Kalbfleisch (1978), namely	
+
+	dL0(t)  ~  Gamma(cdL*0(t), c)
+	
+Here, dL*0(t) can be thought of as a prior guess at the unknown hazard function, with c representing the degree of confidence in this guess. Small values of c correspond to weak prior beliefs. In the example below, we set dL*0(t) = r dt where r is a guess at the failure rate per unit time, and dt is the size of the time interval. 	
+	
+The above formulation is appropriate when genuine prior information exists concerning the underlying hazard function.  Alternatively, if we wish to reproduce a Cox analysis but with, say, additional hierarchical structure, we may use the multinomial-Poisson trick described in the BUGS manual.  This is equivalent to assuming independent increments in the cumulative `non-informative' priors.  This formulation is also shown below.
+
+The fixed effect regression coefficients b are assigned a vague prior
+
+	b  ~  Normal(0.0, 0.000001)
+	
+	BUGS language for the Leuk example:
+
+	model
+	{
+	# Set up data
+		for(i in 1:N) {
+			for(j in 1:T) {
+	# risk set = 1 if obs.t >= t
+				Y[i,j] <- step(obs.t[i] - t[j] + eps)
+	# counting process jump = 1 if obs.t in [ t[j], t[j+1] )
+	#                      i.e. if t[j] <= obs.t < t[j+1]
+				dN[i, j] <- Y[i, j] * step(t[j + 1] - obs.t[i] - eps) * fail[i]
+			}
+		}
+	# Model 
+		for(j in 1:T) {
+			for(i in 1:N) {
+				dN[i, j]   ~ dpois(Idt[i, j])              # Likelihood
+				Idt[i, j] <- Y[i, j] * exp(beta * Z[i]) * dL0[j] 	# Intensity 
+			}     
+			dL0[j] ~ dgamma(mu[j], c)
+			mu[j] <- dL0.star[j] * c    # prior mean hazard
+
+	# Survivor function = exp(-Integral{l0(u)du})^exp(beta*z)    
+			S.treat[j] <- pow(exp(-sum(dL0[1 : j])), exp(beta * -0.5));
+			S.placebo[j] <- pow(exp(-sum(dL0[1 : j])), exp(beta * 0.5));	
+		}
+		c <- 0.001
+		r <- 0.1 
+		for (j in 1 : T) {  
+			dL0.star[j] <- r * (t[j + 1] - t[j])  
+		} 
+		beta ~ dnorm(0.0,0.000001)              
+	}
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+
+Results
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	S.placebo[1]	0.9268	0.04934	4.916E-4	0.8041	0.937	0.9909	1001	10000
+	S.placebo[2]	0.8541	0.06696	7.232E-4	0.703	0.8632	0.9573	1001	10000
+	S.placebo[3]	0.8169	0.0736	8.222E-4	0.6537	0.825	0.9357	1001	10000
+	S.placebo[4]	0.7433	0.08401	9.528E-4	0.5638	0.7496	0.8854	1001	10000
+	S.placebo[5]	0.6705	0.09086	0.001067	0.4835	0.6753	0.8349	1001	10000
+	S.placebo[6]	0.5634	0.09744	0.001146	0.3686	0.5647	0.7469	1001	10000
+	S.placebo[7]	0.5303	0.09811	0.001146	0.3362	0.5301	0.7164	1001	10000
+	S.placebo[8]	0.4147	0.095	0.001148	0.2369	0.4117	0.6058	1001	10000
+	S.placebo[9]	0.3816	0.0943	0.001144	0.2052	0.3781	0.5755	1001	10000
+	S.placebo[10]	0.3209	0.09054	0.001116	0.1576	0.3154	0.509	1001	10000
+	S.placebo[11]	0.2592	0.08513	0.0011	0.1136	0.2526	0.4422	1001	10000
+	S.placebo[12]	0.2266	0.08184	0.001113	0.08899	0.2191	0.4057	1001	10000
+	S.placebo[13]	0.1963	0.07856	0.001105	0.06861	0.188	0.3712	1001	10000
+	S.placebo[14]	0.167	0.07434	0.001102	0.04946	0.1575	0.3368	1001	10000
+	S.placebo[15]	0.1407	0.06902	0.001008	0.03725	0.131	0.2991	1001	10000
+	S.placebo[16]	0.08767	0.05583	8.095E-4	0.01418	0.07627	0.2262	1001	10000
+	S.placebo[17]	0.0452	0.04025	6.235E-4	0.002561	0.03378	0.1518	1001	10000
+	S.treat[1]	0.9825	0.01412	2.133E-4	0.9466	0.9862	0.9981	1001	10000
+	S.treat[2]	0.9642	0.02157	3.779E-4	0.9106	0.9689	0.9921	1001	10000
+	S.treat[3]	0.9543	0.02543	4.507E-4	0.8909	0.9593	0.9883	1001	10000
+	S.treat[4]	0.9339	0.03237	6.151E-4	0.8551	0.9397	0.9793	1001	10000
+	S.treat[5]	0.9121	0.03936	7.785E-4	0.8185	0.9183	0.9699	1001	10000
+	S.treat[6]	0.8766	0.04956	0.001022	0.7622	0.884	0.9527	1001	10000
+	S.treat[7]	0.8645	0.053	0.001138	0.7422	0.8721	0.9464	1001	10000
+	S.treat[8]	0.8171	0.0657	0.001441	0.6685	0.8251	0.9239	1001	10000
+	S.treat[9]	0.8016	0.06942	0.001549	0.646	0.8093	0.9155	1001	10000
+	S.treat[10]	0.7703	0.07732	0.001712	0.5967	0.7785	0.8986	1001	10000
+	S.treat[11]	0.7332	0.08575	0.001921	0.548	0.7411	0.8767	1001	10000
+	S.treat[12]	0.7106	0.09033	0.001979	0.5219	0.7187	0.8641	1001	10000
+	S.treat[13]	0.6872	0.09456	0.002055	0.4853	0.6945	0.8497	1001	10000
+	S.treat[14]	0.6616	0.09872	0.00215	0.4527	0.6681	0.8332	1001	10000
+	S.treat[15]	0.6353	0.1027	0.002258	0.4203	0.6417	0.8189	1001	10000
+	S.treat[16]	0.5662	0.1121	0.00248	0.3379	0.5705	0.771	1001	10000
+	S.treat[17]	0.476	0.1196	0.002402	0.247	0.4754	0.7064	1001	10000
+	beta	1.532	0.4246	0.0108	0.709	1.522	2.387	1001	10000
+

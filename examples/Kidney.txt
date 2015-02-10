@@ -1,0 +1,94 @@
+	Kidney: Weibull regression with
+			random efects
+
+McGilchrist and Aisbett (1991) analyse time to first and second recurrence of infection in kidney patients on dialysis using a Cox model with a multiplicative frailty parameter for each individual. The risk variables considered are age, sex and underlying disease (coded other, GN, AN and PKD). A portion of the data are shown below.
+
+
+
+	Patient	Recurrence	Event	Age at	Sex	Disease
+	Number	time t	(2 = cens)	time t	(1 = female)	(0 = other; 1 = GN
+						 2 = AN; 3 = PKD)
+	______________________________________________________________________
+	1	8,16	1,1	28,28	0	0
+	2	23,13	1,2	48,48	1	1
+	3	22,28	1,1	32,32	0	0
+	4	447,318	1,1	31,32	1	0
+	.....
+	35	119,8	1,1	22,22	1	1
+	36	54,16	2,2	42,42	1	1
+	37	6,78	2,1	52,52	1	3
+	38	63,8	1,2	60,60	0	3
+
+
+We have analysed the same data assuming a parametric Weibull distribution for the survivor function, and including an additive random effect bi for each patient in the exponent of the hazard model as follows
+
+	tij  ~  Weibull(r, mij)    i = 1,...,38;  j = 1,2
+	
+	logmij  = a + bageAGEij + bsexSEXi + bdisease1DISEASEi1 +
+					bdisease2DISEASEi2 + bdisease3DISEASEi3 + bi
+					
+	bi  ~ Normal(0, t)
+	
+where AGEij is a continuous covariate, SEXi is a 2-level factor and DISEASEik (k = 1,2,3) are dummy variables representing the 4-level factor for underlying disease. Note that the the survival distribution is a truncated Weibull for censored observations as discussed in the mice example. The regression coefficients and the precision of the random effects t are given independent ``non-informative'' priors, namely	
+
+	bk  ~  Normal(0, 0.0001)
+	
+	t  ~ Gamma(0.0001, 0.0001)
+	
+The shape parameter of the survival distribution r is given a Gamma(1, 0.0001) prior which is slowly decreasing on the positive real line.
+
+The graphical model and BUGS language are given below. 
+
+
+Graphical model for kidney example:	
+
+
+BUGS language for kidney example
+
+	model
+	{
+		for (i in 1 : N) {
+			for (j in 1 : M) {
+	# Survival times bounded below by censoring times:
+				t[i,j] ~ dweib(r, mu[i,j])C(t.cen[i, j], );
+				log(mu[i,j ]) <- alpha + beta.age * age[i, j] 
+						+ beta.sex  *sex[i]  
+						+ beta.dis[disease[i]] + b[i];
+				cumulative.t[i,j] <- cumulative(t[i,j], t[i,j])
+			}
+	# Random effects:
+			b[i] ~ dnorm(0.0, tau)   
+		}
+	# Priors:
+		alpha ~ dnorm(0.0, 0.0001);
+		beta.age ~ dnorm(0.0, 0.0001);
+		beta.sex ~ dnorm(0.0, 0.0001);
+	#	beta.dis[1] <- 0;  # corner-point constraint
+		for(k in 2 : 4) {
+			beta.dis[k] ~ dnorm(0.0, 0.0001);
+		}
+		tau ~ dgamma(1.0E-3, 1.0E-3);
+		r ~ dgamma(1.0, 1.0E-3); 
+		sigma <- 1 / sqrt(tau); # s.d. of random effects
+	}
+
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+Results
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha	-4.693	1.045	0.05452	-6.971	-4.579	-2.927	5001	20000
+	beta.dis[2]	0.1362	0.5865	0.01461	-0.9617	0.1147	1.372	5001	20000
+	beta.dis[3]	0.6575	0.6062	0.0184	-0.4679	0.627	1.956	5001	20000
+	beta.dis[4]	-1.205	0.8619	0.02398	-2.899	-1.219	0.5216	5001	20000
+	beta.sex	-2.005	0.5574	0.02368	-3.207	-1.979	-1.007	5001	20000
+	r	1.236	0.1976	0.0127	0.9128	1.213	1.657	5001	20000
+	sigma	0.6843	0.3868	0.02288	0.04943	0.6941	1.44	5001	20000
+
+
+

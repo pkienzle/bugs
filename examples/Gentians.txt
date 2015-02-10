@@ -1,0 +1,76 @@
+ Gentians: accounting for imperfect
+ 				detection in site-occupancy models
+					for species distribution
+					
+					(contributed by Marc Kerry)
+					
+Modelling species distributions is important in both basic and applied ecology (e.g., Scott et al., 2002, Island Press). Typically, logistic regression-types of models (GLM) with perhaps added smooth terms (GAMs) are used to model detection/non-detection data by a set of explanatory variables. However, most organisms are not always found at all the sites they actually occur. Hence, virtually always people don't model actual distributions, i.e., probability of occurrence per se, but rather the product of the probability of occurrence and the probability of detection, given occurrence. Imperfect detection means that true distribution is underestimated and that factors that affect detection rather than occurrence may end up in predictive models of occurrence.
+
+To model distributions free from the biasing effects of detection, MacKenzie et al. (Ecology, 2002, 2003; 2006; Academic Press) developed site-occupancy models, a sort of coupled logistic regression models where one submodel describes actual occurrence and the other detection given occurrence. Royle and Kery (Ecology, 2007) presented a hierarchical formulation of these models that may easily be fitted using BUGS. Site-occupancy models may be applied whenever information about the detection process separate from that on occurrence is available. For this, replicate detection/nondetection observations are required for at least some of the studied sites during a short time period when the population can be assumed closed, i.e., when occupancy status can be assumed to be constant. (For the dynamic, multi-season version of these models, essentially a generalised metapopulation model; see MacKenzie et al. 2003, 2006; Royle and Kery 2007).
+
+The single-season site-occupancy model can be succinctly written as a state-space model in two linked equations:
+
+					zi ~ Bernoulli(yi)						State equation
+					yij ~ Bernoulli( zi * pij)				Observation equation
+
+The first line describes the true biological process: true occurrence, the latent state zi, at site i is a Bernoulli random variable governed by the parameter yi, which is occurrence probability or occupancy. The second line describes the actual observation of the study species yij, that is, detection or nondetection at site i during survey j. This is another Bernoulli random variable governed by a parameter that is the product of actual occurrence at that site, zi, and detection probability pij at site i during survey j. Both Bernoulli parameters, occurrence yi and detection pij, can be expressed as linear or other functions of covariates via a logit link. Note that covariates for occurrence will be constant over replicated surveys, while those for detection may be either constant or variable (survey-specific). Technically, the site-occupancy model can be described as a non-standard generalized linear mixed model with a random effect that follows a Bernoulli rather than normal distribution.
+
+This example site-occupancy analysis is based on simulated data where presence or absence of a rare plant, the gentian Gentianella germanica, was inventoried at 150 grassland sites using three independent surveys at each site. The aim was to estimate prevalence of the gentian and quantify the (positive) relationship between occurrence and site wetness (continuous 0 to 1). Detection probability was assumed to be lower at wetter sites because of greater vegetation height, leading to the absence of an observed occurrence-wetness relationship in a naive analysis using simple logistic regression. This site-occupancy example fits the wetness covariate into both the mean of occurrence probability and into the mean of detection probability. In addition, the example features use of a survey-specific covariate, observer experience (rated continuous 0 to 1).
+
+Notes: A good choice of starting values can be essential for successfully fitting the model. In particular, it ia a good idea to use the observed occupancy state of each site as starting value for the latent state is a good idea. The model can be fitted with missing y values, but there should not be missing values in the explanatory variables (unless  they are modelled). For very imbalanced data sets, it is more efficient to fit the model to a "vertical data format"; see example for Binomial mixture model.
+
+	model 
+	{
+         		# Priors
+         		alpha.occ ~ dunif(-20, 20)
+         		beta.occ ~ dunif(-20, 20)
+         		alpha.p ~ dunif(-20, 20)
+         		beta1.p ~ dunif(-20, 20)
+         		beta2.p ~ dunif(-20, 20)
+
+         		# Likelihood
+         		for (i in 1:R) {
+         			# Model for partially latent state
+            			 z[i] ~ dbern(psi[i])		# True occupancy z at site i
+            			 logit(psi[i]) <- alpha.occ + beta.occ * wetness[i]
+            			 for (j in 1:T) {
+                			# Observation model for actual observations
+               				 y[i, j] ~ dbern(eff.p[i, j])	# Det.-nondet. at i and j
+               				 eff.p[i, j] <- z[i] * p[i, j]
+               				 logit(p[i, j]) <- alpha.p + beta1.p * wetness [i] + beta2.p * experience[i, j]
+            			 }
+        		 }
+         	 	# Derived quantity
+           		occ.fs <- sum(z[ ])	# Finite sample number of occupied sites
+	}
+
+
+Data ( click to open )
+
+
+Inits for chain 1  Inits for chain 2  Inits for chain 3 ( click to open )
+
+
+
+Results
+
+Running 3 parallel chains with 11000 iterations each and with the first 1000 updates discarded yields this:
+ 		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha.occ	-1.403	0.5352	0.01025	-2.511	-1.385	-0.4055	1001	30000
+	alpha.p	-1.228	0.4525	0.009189	-2.124	-1.22	-0.367	1001	30000
+	beta.occ	7.482	2.201	0.04522	3.586	7.319	12.26	1001	30000
+	beta1.p	-5.938	0.8365	0.0143	-7.655	-5.909	-4.372	1001	30000
+	beta2.p	6.149	0.7951	0.01551	4.664	6.118	7.819	1001	30000
+	occ.fs	114.6	3.836	0.06488	106.0	115.0	121.0	1001	30000
+
+
+Compare this with the "known truth" of the data-generating parameters:
+		alpha.occ = -1
+		alpha.p = 1
+		beta.occ = 5
+		beta1.p = -5
+		beta2.p = 5
+
+In this example, the gentian was discovered at only 65 among the 108 sites where it actually occurs. This needs to be compared with the finite-sample occurrence (occ.fs), which is estimated remarkably precisely. To see what may happen in conventional modelling of such data, it is instructive to run a logistic regression of the observed detection/nondetection data on wetness and mean observer experience.
+ 
+

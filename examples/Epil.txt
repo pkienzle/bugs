@@ -1,0 +1,107 @@
+	Epilepsy: repeated measures on
+			Poisson counts
+
+Breslow and Clayton (1993) analyse data initially provided by Thall and Vail (1990) concerning seizure counts in a randomised trial of anti-convulsant therpay in epilepsy. The table below shows the successive seizure counts for 59 patients. Covariates are treatment (0,1), 8-week baseline seizure counts, and age in years. The structure of this data is shown below
+
+
+	Patient	y1	y2	y3	y4	Trt	Base	Age
+	___________________________________________
+	1	5	3	3	3	0	11	31
+	2	3	5	3	3	0	11	30
+	3	2	4	0	5	0	6	25
+	4	4	4	1	4	0	8	36
+	....
+	8	40	20	21	12	0	52	42
+	9	5	6	6	5	0	12	37
+	....
+	59	1	4	3	2	1	12	37
+
+We consider model III of  Breslow and Clayton (1993), in which Base is transformed to log(Base/4) and Age to  log(Age), and a Treatment by log(Base/4) interaction is included.  Also present are random effects for both individual subjects b1j and also subject by visit random effects bjk to model extra-Poisson variability within subjects.  V4 is an indicator variable for the 4th visit.
+
+	
+	yjk  ~  Poisson(mjk)
+	
+	logmjk  = a0 + aBase log(Basej / 4) + aTrtTrtj + aBTTrtj log(Basej / 4) +
+			aAge Agej + aV4V4 + b1j + bjk
+			
+	b1j  ~  Normal(0, tb1)
+	
+	bjk  ~  Normal(0, tb)
+
+Coefficients and precisions are given independent "noninformative'' priors.  
+
+The graphical model is below
+
+
+
+The model shown above leads to a Markov chain that is highly correlated with poor convergence properties. This can be overcome by standardizing each covariate about its mean to ensure approximate prior independence between the regression coefficients as show below:
+
+BUGS language for epil example model III with covariate centering
+(centering interaction term BT about mean(BT)):
+
+
+	model 
+	{
+		for(j in 1 : N) {
+			for(k in 1 : T) {
+				log(mu[j, k]) <- a0 + alpha.Base * (log.Base4[j] - log.Base4.bar)   
+	                  + alpha.Trt * (Trt[j] - Trt.bar)  
+	                  + alpha.BT  * (BT[j] - BT.bar)  
+	                  + alpha.Age * (log.Age[j] - log.Age.bar)  
+	                  + alpha.V4  * (V4[k] - V4.bar) 
+	                  + b1[j] + b[j, k]
+				y[j, k] ~ dpois(mu[j, k])
+				b[j, k] ~ dnorm(0.0, tau.b);       # subject*visit random effects
+			}
+			b1[j]  ~ dnorm(0.0, tau.b1)        # subject random effects
+			BT[j] <- Trt[j] * log.Base4[j]    # interaction
+			log.Base4[j] <- log(Base[j] / 4) log.Age[j] <- log(Age[j])
+		}
+		
+	# covariate means:
+		log.Age.bar <- mean(log.Age[])                
+		Trt.bar  <- mean(Trt[])                   
+		BT.bar <- mean(BT[])                 
+		log.Base4.bar <- mean(log.Base4[])         
+		V4.bar <- mean(V4[])                  
+	# priors:
+	
+		a0 ~ dnorm(0.0,1.0E-4) 		           
+		alpha.Base ~ dnorm(0.0,1.0E-4)            
+		alpha.Trt  ~ dnorm(0.0,1.0E-4);           
+		alpha.BT   ~ dnorm(0.0,1.0E-4)            
+		alpha.Age  ~ dnorm(0.0,1.0E-4)            
+		alpha.V4   ~ dnorm(0.0,1.0E-4)
+		tau.b1     ~ dgamma(1.0E-3,1.0E-3); sigma.b1 <- 1.0 / sqrt(tau.b1)
+		tau.b      ~ dgamma(1.0E-3,1.0E-3); sigma.b  <- 1.0/  sqrt(tau.b)		     
+		        
+	# re-calculate intercept on original scale: 
+		alpha0 <- a0 - alpha.Base * log.Base4.bar - alpha.Trt * Trt.bar 
+		- alpha.BT * BT.bar - alpha.Age * log.Age.bar - alpha.V4 * V4.bar
+	}
+	
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2		( click to open )
+
+
+Results
+
+A burn in of 5000 updates followed by a further 10000 updates gave the following parameter estimates 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha.Age	0.4816	0.3626	0.01466	-0.2639	0.4889	1.182	2001	10000
+	alpha.BT	0.3484	0.2146	0.01183	-0.06699	0.3473	0.7835	2001	10000
+	alpha.Base	0.8933	0.1403	0.007015	0.6209	0.8918	1.172	2001	10000
+	alpha.Trt	-0.9485	0.4318	0.02043	-1.808	-0.9501	-0.1064	2001	10000
+	alpha.V4	-0.1047	0.08826	0.001711	-0.2781	-0.1043	0.06825	2001	10000
+	alpha0	-1.407	1.253	0.05115	-3.832	-1.436	1.097	2001	10000
+	sigma.b	0.3627	0.04409	0.001594	0.2804	0.3609	0.4535	2001	10000
+	sigma.b1	0.4979	0.07081	0.001797	0.3722	0.4939	0.6469	2001	10000
+
+
+These estimates can be compared with those of Breslow and Clayton (1993) who reported
+a0 = -1.27 +/- 1.2, aBase = 0.86 +/- 0.13, aTrt = -0.93 +/- 0.40, aBT = 0.34 +/- 0.21, aAge = 0.47 +/- 0.35, aV4 = -0.10 +/- 0.90 sb1 = 0.48 +/- 0.06 sb = 0.36+/0.04.
+
+
+

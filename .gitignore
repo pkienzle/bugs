@@ -1,0 +1,30 @@
+# Eclipse/pycharm settings files
+.idea
+.project
+.pydevproject
+
+# editor backup files
+*.swp
+*~
+*.bak
+
+# build/test
+.settings
+.coverage
+/build/
+/dist/
+/bugs.egg-info/
+
+# doc targets
+/doc/_build/
+/doc/api/
+/doc/tutorial/
+
+# python droppings from running in place
+__pycache__/
+*.pyc
+*.pyo
+*.so
+*.pyd
+*.dll
+*.dyld

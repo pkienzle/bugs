@@ -1,0 +1,73 @@
+	Eye Tracking: dirichlet process
+			prior
+
+Adapted from Congdon (2001), example 6.27, page 263.
+
+	model{	
+		for( i in 1 : N ) {
+			S[i] ~ dcat(pi[])
+			mu[i] <- theta[S[i]]
+			x[i] ~ dpois(mu[i])
+			for (j in 1 : C) {
+				SC[i, j] <- equals(j, S[i])
+			}
+		}
+	# Precision Parameter 
+		alpha <- 1
+	#  alpha~ dgamma(0.1,0.1)
+	# Constructive DPP
+		p[1] <- r[1]
+		for (j in 2 : C) {
+			p[j] <- r[j] * (1 - r[j - 1]) * p[j -1 ] / r[j - 1]
+		}
+		p.sum <- sum(p[])
+		for (j in 1:C){     
+			theta[j] ~ dgamma(A, B)
+			r[j] ~ dbeta(1, alpha)
+	# scaling to ensure sum to 1 
+			pi[j] <- p[j] / p.sum 
+		}
+	# hierarchical prior on theta[i] or preset parameters
+		A ~ dexp(0.1)     B ~dgamma(0.1, 0.1)
+	#	A <- 1 B <- 1
+	# total clusters
+		K <- sum(cl[])
+		for (j in 1 : C) {
+			sumSC[j] <- sum(SC[ , j])
+			cl[j] <- step(sumSC[j] -1)
+		}
+	}
+
+Data ( click to open )
+
+
+Results
+
+a) fixed A and B, fixed alpha=1, C=10 (max catgeories)
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	K	7.885	1.186	0.03756	6.0	8.0	10.0	5001	100000
+	deviance	297.0	15.61	0.2493	266.6	297.0	328.1	5001	100000
+	mu[92]	12.93	3.632	0.04902	5.704	14.12	17.82	5001	100000
+
+
+
+
+
+Notice prior and data conflict.
+
+
+b) variable A and B, fixed alpha=1, C=10 (max catgeories)
+
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	A	0.7381	0.4565	0.01027	0.1615	0.6339	1.9	5001	100000
+	B	0.08984	0.06578	9.447E-4	0.00823	0.07503	0.2568	5001	100000
+	K	7.288	1.387	0.04919	5.0	7.0	10.0	5001	100000
+	deviance	281.1	17.24	0.419	247.2	281.3	314.5	5001	100000
+	mu[92]	11.09	3.025	0.02739	6.243	10.73	18.17	5001	100000
+
+
+
+
+

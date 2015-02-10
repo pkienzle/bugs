@@ -1,0 +1,66 @@
+	Salm: extra - Poisson variation
+			in dose - response study
+
+Breslow (1984) analyses some mutagenicity assay data (shown below) on salmonella in which three plates have been processed at each dose i of quinoline and the number of revertant colonies of TA98 Salmonella measured.  A certain dose-response curve is suggested by theory.
+
+	dose of quinoline (mg per plate)
+	
+	0	10	33	100	333	1000
+	_______________________________
+	15	16	16	27	33	20
+	21	18	26	41	38	27
+	29	21	33	69	41	42
+
+This is assumed to be a random effects Poisson model allowing for over-dispersion.  Let xi be the dose on the plates i1, i2 and i3. Then we assume
+
+	yij  ~  Poisson(mij)
+
+	log(mij)  = a + b log(xi + 10) + gxi + lij
+
+	lij  ~  Normal(0, t)
+
+a , b , g , t are given independent ``noninformative'' priors.  The appropriate graph is shown
+
+
+Graphical model for salm example
+
+
+
+
+BUGS language for salm example
+
+	model
+	{
+		for( i in 1 : doses ) {
+			for( j in 1 : plates ) {
+				y[i , j] ~ dpois(mu[i , j])
+				log(mu[i , j]) <- alpha + beta * log(x[i] + 10) + 
+					gamma * x[i] + lambda[i , j]
+				lambda[i , j] ~ dnorm(0.0, tau)	
+				cumulative.y[i , j] <- cumulative(y[i , j], y[i , j])
+			}
+		}
+		alpha ~ dnorm(0.0,1.0E-6)
+		beta ~ dnorm(0.0,1.0E-6)
+		gamma ~ dnorm(0.0,1.0E-6)
+		tau ~ dgamma(0.001, 0.001)
+		sigma <- 1 / sqrt(tau)
+	}	
+Data ( click to open )
+
+Inits for chain 1	 Inits for chain 2	( click to open )
+
+
+
+Results
+
+A 1000 update burn in followed by a further 10000 updates gave the parameter estimates
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	alpha	2.174	0.3576	0.009239	1.455	2.173	2.872	1001	10000
+	beta	0.3096	0.09808	0.002719	0.1193	0.3095	0.5037	1001	10000
+	gamma	-9.587E-4	4.366E-4	1.194E-5	-0.00182	-9.565E-4	-1.194E-4	1001	10000
+	sigma	0.2576	0.07933	0.001941	0.1283	0.2491	0.4357	1001	10000
+
+
+These estimates can be compared with the quasi-likelihood estimates of Breslow (1984) who reported a = 2.203 +/-  0.363, b = 0.311 +/- 0.099, g = -9.74E-4 +/- 4.37E-4, s = 0.268

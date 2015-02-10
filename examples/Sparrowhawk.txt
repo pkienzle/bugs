@@ -1,0 +1,144 @@
+ Sparrowhawks: Dynamic site-
+						occupancy, or generalised
+						metapopulation, model for the
+						dynamics of distributions
+					
+					(contributed by Marc Kery)
+
+Modelling the dynamics of species distributions is central to metapopulation ecology, biogeography and other branches of ecology. However, simple analyses that do not account for possible imperfect detection will lead to distorted results; the general distributional extent and patch survival rate will be underestimated and colonisation rates and turnover rates will be overestimated. And worse, the degree of the induced bias may be related to the very factors one wants to study. For instance, most species will have lower abundance at range edges leading to reduced probability to detect them in occupied patches; therefore, increased turnover rates at range edges would be expected as a mere sampling effect. Similar effects will occur in metapopulation studies unless possible imperfect detection is accounted for (Moilanen, Oikos, 2002).
+
+To model the dynamics of distributions or of metapopulations, i.e., occupancy and patch survival and colonisation rates, free of the biasing effects of imperfect detection,  MacKenzie et al. (Ecology, 2003; also Academic Press, 2006) developed a multi-season version of their site-occupancy model (see example "Gentians") that uses spatially and temporally replicated detection/nondetection (a.k.a."presence/absence") data to model occurrence separately from detection. Royle and Kéry, (Ecology, 2007) developed a hierarchical formulation of the dynamic model that can be easily implemented in WinBUGS. This model describes the dynamic biological process of patch occupancy separately from the observation process.
+
+The data required for this type of modeling consists of the detection/nondetection observations at a number of sites (i) and over a number of years ("seasons", t). Seasons are chosen so that the occupancy state of a site (occupied or not occupied) does not change within, but can only do so between successive seasons. Importantly, to be able to estimate parameters of the biological process separately from those of the observation process, within-season replication of observations is required for at least some sites and some years; it is this replication that contains the information about the observation process, i.e., detection probability. Hence, yitk denotes the binary detection observation at site i, in season t and for replicate observation k. Important assumptions of the model are within-season "closure" and no false-positive errors, i.e., a species can only be overlooked when absent but not falsely detected where it is not present.
+
+Dynamic site-occupancy models describe the biological process underlying observation yitk as a function of initial occupancy in the first year (psit=1) and an annual probability of patch survival (phit) and patch colonisation (gammat). Several other parameterisations are available, e.g. in terms of extinction rather than patch survival rate or the autologistic parameterisation (see Royle and Dorazio, Academic Press, 2008). The autologistic is particularly useful when effects of covariates directly on occupancy need to be modellied, rather than on its dynamic components.
+
+Here is the representation in terms of initial occupancy (zit) and probabilities of survival (phi) and colonisation (gamma). For clarity, index i (for site) is dropped; however, importantly, all parameters could be made site-specific and modelled as (e.g., logistic) functions of covariates.
+
+State process:
+	zt ~ Bernoulli(psit=1)					Initial occupancy psi, for year j = 1
+	zt | zt -1 ~ Bernoulli(zt -1 * phit -1 + (1 - zt -1 ) *gammat -1 )  Occupancy in later years
+
+Observation process:
+	yt ~ Bernoulli( zt * pt)				Detection conditional on occurrence (z=1)
+
+Hence, occupancy dynamics is modelled as a Bernoulli process with success probability depending on the previous year's occurrence state (z) and survival and colonisation rates: if a site was occupied (zt -1 =1), the survival component (phi) in the Bernoulli success probability becomes operative, while if it wasn't (zt -1 =0), the colonisation component (gamma) does.
+
+A number of useful quantities can be obtained as derived parameters such as the actual number of occupied sites in each year (or alternatively, finite-sample occupancy) or turnover and growth rates. Occupancy for years t>1 is also a derived parameter that can be computed from initial occupancy and survival and colonisation rates. The hierarchical representation of the model is easily amenable to introduction of additional complexity, for additional random effects that may be correlated; see Royle and Kéry (2007) for examples. 
+
+The analysis presented here uses "presence/absence" data for the European Sparrowhawk (Accipiter nisus) collected during 2000-2005 in the Swiss national Breeding Bird Survey (MHB) where three (and sometimes only two) replicate surveys are conducted in each of 267 kilometre square quadrats laid out as a grid over the country. Data from a random subset of 116 quadrats are given in two arrays: x contains the binary "detection/nondetection" data at site i during season j and for replicate k. REPS contains the number of replicates at site i and in season j.
+
+	model 
+	{	# Generalised metapopulation model or dynamic site-occupancy model
+	# Priors
+		for(i in 1 : nyear -1){
+			phi[i] ~ dunif(0,1) # Patch survival rate (one fewer than number of years)
+			gamma[i] ~ dunif(0,1)  # Patch colonisation rate 
+			                                      # (one fewer than number of years)
+			p[i]~dunif(0,1)   # Detection probability (conditional on occurrence)
+		}
+		p[nyear]~dunif(0,1)	        # Detection in last year 
+		psi~dunif(0,1)       # Occupancy in first year (remainder are derived quantitites)
+
+		# Model for the parameters describing the observation process: 
+		#detection probability
+		for(i in 1 : nsite){
+			for(j in 1 : nyear){
+				for(k in 1 : REPS[i,j]){
+					pmat[j, i, k]<- p[j]    # Could also add a linear time trend or add 
+				                              # covariate function
+				}
+			}
+		}
+
+		# Initial state and likelihood for year 1
+		for(i in 1 : nsite){
+			z[i,1] ~ dbern(psi) # State model for year 1
+			for(k in 1 : REPS[i,1]){
+				mu2[1, i, k] <- z[i,1] * pmat[1, i, k]
+				x[1, i, k] ~ dbern(mu2[1, i, k])	  # Observation model for year 1
+			}
+		}
+
+		# Likelihood for second to final years
+		for(i in 1 : nsite){ # State model
+			for(j in 2 : nyear){
+				R[i, j] <- (1 - z[i ,j -1]) *  z[i, j]  # "recruits"
+				mu[i, j ]<- z[i, j -1] * phi[j -1]+ (1 - z[i, j -1]) * gamma[j -1]
+				z[i, j] ~ dbern(mu[i, j])
+				for(k in 1 : REPS[i, j]){    # Observation model
+					mu2[j, i, k] <- z[i, j] * pmat[j, i, k]
+					x[j, i, k] ~ dbern(mu2[j, i, k])
+				}
+			}
+		}
+
+	# Derived quantities: Annual occupancy, finite-sample occupancy, 
+	#growth rate, turnover rate
+		psivec[1] <- psi # Occupancy rate in year 1
+		Nocc[1 ]< -sum(z[1 : nsite,1])      # Number occupied sites in year 1
+		for(t in 2 : nyear){
+			turnover[t] <-  sum(R[1 : nsite, t]) / Nocc[t]  # Turnover rate
+			Nocc[t] <- sum(z[1 : nsite, t]) # Number of occupied sites in years 2 to 6
+			# Occ. rate in years 2 to 6
+			psivec[t] <- psivec[t -1] * phi[t -1]+ (1 - psivec[t -1]) * gamma[t - 1]
+			growthr[t] <- psivec[t] / psivec[t -1] # Growth rate
+		}
+	}
+
+
+
+Data ( click to open )
+
+
+Inits for chain 1  Inits for chain 2   ( click to open )
+
+
+
+Results
+
+Running 2 chains for 11000 iterations, with 1000 discarded as a burnin,  yields these results: 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	Nocc[1]	49.68	18.92	0.9392	25.0	45.0	101.0	1001	20000
+	Nocc[2]	40.04	14.09	0.6994	20.0	38.0	74.0	1001	20000
+	Nocc[3]	52.34	21.55	1.288	20.0	49.0	100.0	1001	20000
+	Nocc[4]	39.49	17.39	1.002	18.0	35.0	84.0	1001	20000
+	Nocc[5]	44.74	14.02	0.6963	26.0	42.0	82.0	1001	20000
+	Nocc[6]	21.85	4.62	0.1331	16.0	21.0	34.0	1001	20000
+	gamma[1]	0.1602	0.1425	0.007688	0.004747	0.1227	0.5465	1001	20000
+	gamma[2]	0.3719	0.227	0.01369	0.04055	0.3296	0.8999	1001	20000
+	gamma[3]	0.3184	0.1971	0.01112	0.03562	0.282	0.7957	1001	20000
+	gamma[4]	0.3925	0.1716	0.00903	0.1285	0.3625	0.8259	1001	20000
+	gamma[5]	0.06426	0.04963	0.001644	0.002814	0.05389	0.1831	1001	20000
+	growthr[2]	0.8867	0.3736	0.01859	0.3453	0.8359	1.797	1001	20000
+	growthr[3]	1.431	0.7238	0.03729	0.4549	1.273	3.189	1001	20000
+	growthr[4]	0.9061	0.5695	0.03107	0.2401	0.7705	2.354	1001	20000
+	growthr[5]	1.357	0.8039	0.04103	0.4323	1.176	3.409	1001	20000
+	growthr[6]	0.5525	0.2018	0.008281	0.2323	0.5215	1.017	1001	20000
+	p[1]	0.1535	0.0602	0.002251	0.06076	0.146	0.2927	1001	20000
+	p[2]	0.1608	0.06567	0.00261	0.06556	0.1497	0.3186	1001	20000
+	p[3]	0.1019	0.05318	0.002426	0.03531	0.08944	0.2395	1001	20000
+	p[4]	0.1882	0.08641	0.003862	0.06454	0.1737	0.3893	1001	20000
+	p[5]	0.1557	0.0545	0.001897	0.06891	0.1491	0.2806	1001	20000
+	p[6]	0.4086	0.09374	0.00202	0.2292	0.4072	0.5903	1001	20000
+	phi[1]	0.6327	0.1961	0.01045	0.268	0.6232	0.9798	1001	20000
+	phi[2]	0.6028	0.2349	0.01294	0.1686	0.6053	0.975	1001	20000
+	phi[3]	0.4044	0.2287	0.01315	0.08176	0.3557	0.9346	1001	20000
+	phi[4]	0.3984	0.1946	0.009051	0.09954	0.372	0.8545	1001	20000
+	phi[5]	0.4297	0.1456	0.005662	0.1889	0.4136	0.7609	1001	20000
+	psivec[1]	0.4299	0.1663	0.008109	0.2001	0.3941	0.8732	1001	20000
+	psivec[2]	0.3487	0.1245	0.006208	0.1615	0.3303	0.648	1001	20000
+	psivec[3]	0.4527	0.1842	0.01109	0.1737	0.4247	0.8609	1001	20000
+	psivec[4]	0.3445	0.1494	0.008693	0.1432	0.3115	0.7194	1001	20000
+	psivec[5]	0.3889	0.1241	0.006197	0.2108	0.3678	0.7184	1001	20000
+	psivec[6]	0.1985	0.05274	0.00158	0.1154	0.1917	0.3222	1001	20000
+	turnover[2]	0.2296	0.1677	0.00702	0.0	0.2059	0.5882	1001	20000
+	turnover[3]	0.5192	0.2088	0.01067	0.05769	0.5484	0.8462	1001	20000
+	turnover[4]	0.4881	0.239	0.01265	0.03333	0.5122	0.8788	1001	20000
+	turnover[5]	0.6556	0.1917	0.009406	0.1667	0.7	0.9111	1001	20000
+	turnover[6]	0.1713	0.1391	0.004582	0.0	0.15	0.48	1001	20000
+
+
+Note that normally, detection probability of Swiss Sparrowhawks was only around 15%, so a naive metapopulation model that assumes perfect detection would yield greatly biased inference. Something seemed to have happened in 2005 (see, e.g., Nocc[6]), but we don't know what.
+

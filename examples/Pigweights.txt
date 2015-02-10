@@ -1,0 +1,74 @@
+	Pig Weight Gain
+
+Histogram smoothing adapted from Example 5.9 from Congdon (2001), p 180. The model illustrates a structured precision matrix for a multivariate normal prior on a multinomial logistic regression model. The model can also be formulated in terms of a structured covariance matrix (see the commented out section of the model) which has a form with elements that  decay exponentialy with absolute value of difference in index.
+
+	model{ 
+		y[1:s] ~ dmulti(th[1 : s] , n)
+		sum.g <- sum(g[])
+	# smoothed frequencies
+		for (i in 1 : s) {     
+			Sm[i] <- n * th[i]
+			g[i] <- exp(gam[i])    
+			th[i]  <- g[i] / sum.g
+		}
+	# prior on elements of AR Precision Matrix  
+		rho ~ dunif(0, 1)
+		tau ~ dunif(0.5, 10)
+	# MVN for logit parameters
+		gam[1 : s] ~ dmnorm(mu[], T[ , ])
+		for (j in 1:s) { 
+			mu[j] <- -log(s)
+		}
+	# Define Precision Matrix
+		for (j in 2 : s - 1) {
+			T[j, j] <- tau * (1 + pow(rho, 2))
+		}
+		T[1, 1] <- tau 
+		T[s, s] <- tau
+		for (j in 1 : s -1 ) { 
+			T[j, j + 1] <- -tau * rho
+			T[j + 1, j] <- T[j, j + 1]
+		}
+		for (i in 1 : s - 1) {
+			for (j in 2 + i : s) {
+				T[i, j] <- 0; T[j, i] <- 0 
+			}
+		}
+	# Or Could do in terms of covariance, which is simpler to write but slower
+	#		for (i in 1 : s) {
+	#			for (j in 1 : s) {
+	#				cov[i, j] <- pow(rho, abs(i - j)) / tau
+	#			}
+	#		}
+	#		T[1 : s, 1 : s] <- inverse(cov[ , ])
+	}
+
+Data ( click to open )
+
+Inits for chain 1 		Inits for chain 2	( click to open )
+
+Results
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	Sm[1]	1.526	0.8822	0.03272	0.3602	1.332	3.795	1001	10000
+	Sm[2]	1.568	0.8404	0.03506	0.4381	1.394	3.701	1001	10000
+	Sm[3]	1.935	0.9125	0.03232	0.6172	1.775	4.077	1001	10000
+	Sm[4]	5.019	1.811	0.04973	2.27	4.77	9.265	1001	10000
+	Sm[5]	6.181	2.008	0.0587	2.967	5.926	10.55	1001	10000
+	Sm[6]	10.95	2.758	0.07625	6.399	10.72	17.04	1001	10000
+	Sm[7]	27.76	4.763	0.1423	19.3	27.5	37.76	1001	10000
+	Sm[8]	30.5	4.81	0.1581	21.66	30.49	40.36	1001	10000
+	Sm[9]	40.47	5.938	0.1915	29.93	40.14	52.45	1001	10000
+	Sm[10]	48.6	6.232	0.1972	37.41	48.43	61.2	1001	10000
+	Sm[11]	64.92	7.136	0.2414	52.27	64.66	80.05	1001	10000
+	Sm[12]	70.81	7.873	0.2578	55.78	70.72	86.49	1001	10000
+	Sm[13]	56.04	6.753	0.2216	43.67	55.83	69.86	1001	10000
+	Sm[14]	46.01	6.006	0.1732	34.7	45.86	58.39	1001	10000
+	Sm[15]	43.69	5.929	0.2025	32.89	43.44	56.1	1001	10000
+	Sm[16]	23.55	4.335	0.1378	15.74	23.41	32.75	1001	10000
+	Sm[17]	22.28	4.235	0.1286	14.68	22.09	31.27	1001	10000
+	Sm[18]	11.41	2.797	0.07948	6.623	11.13	17.55	1001	10000
+	Sm[19]	4.927	1.718	0.05527	2.191	4.705	9.171	1001	10000
+	Sm[20]	2.022	0.9588	0.03274	0.5989	1.888	4.273	1001	10000
+	Sm[21]	1.815	0.9839	0.02935	0.4213	1.636	4.226	1001	10000
+

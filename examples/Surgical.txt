@@ -1,0 +1,135 @@
+	Surgical: Institutional ranking
+
+This example considers mortality rates in 12 hospitals performing cardiac surgery in babies. The data are shown below.
+
+ 
+		Hospital	No of ops	      No of deaths	
+		__________________________________
+		A	47	    0
+		B	148	     18
+		C	119	    8
+		D	810	     46
+		E	211	    8
+		F	196	     13
+		G	148	    9
+		H	215	      31
+		I	207	     14
+		J	97	    8
+		K	256	     29
+		L	360	     24
+
+	The number of deaths ri for hospital i are modelled as a binary response variable with `true' failure probability pi:
+
+		ri  ~  Binomial(pi, ni)
+
+We first assume that the true failure probabilities are  independent  (i.e.fixed effects) for each hospital. This is equivalent to assuming a standard non-informative prior distribution for the pi's, namely:
+
+		pi  ~  Beta(1.0, 1.0)
+
+
+
+Graphical model for fixed effects surgical example:
+		
+	
+	
+		BUGS language for fixed effects surgical model:
+
+
+		model
+		{
+		   for( i in 1 : N ) {
+		      p[i] ~ dbeta(1.0, 1.0)
+			r[i] ~ dbin(p[i], n[i])
+		   }
+		}
+
+
+Data	( click to open )
+
+Inits for chain 1 			Inits for chain 2	( click to open )
+
+A more realistic model for the surgical data is to assume that the failure rates across hospitals are similar in some way. This is equivalent to specifying a random effects model for the true failure probabilities pi as follows:
+
+		logit(pi)  =  bi
+		
+		bi  ~  Normal(m, t)
+		
+Standard non-informative priors are then specified for the population mean (logit) probability of failure, m, and precision, t.
+
+
+Graphical model for random effects surgical example:
+
+
+
+BUGS language for random effects surgical model:
+		
+		
+		model
+		{
+			for( i in 1 : N ) {
+				b[i] ~ dnorm(mu,tau)
+				r[i] ~ dbin(p[i],n[i])
+				logit(p[i]) <- b[i]
+				}
+			pop.mean <- exp(mu) / (1 + exp(mu))
+			mu ~ dnorm(0.0,1.0E-6)
+			sigma <- 1 / sqrt(tau)
+			tau ~ dgamma(0.001,0.001)	   
+		}
+
+
+Data	( click to open )
+
+Inits for chain 1 			Inits for chain 2	( click to open )
+
+
+Results
+
+A burn in of 1000 updates followed by a further 10000 updates gave the following estimates of surgical mortality in each hospital for the fixed effect analysis
+
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	p[1]	0.0206	0.01992	2.255E-4	5.941E-4	0.01435	0.07358	1001	10000
+	p[2]	0.1267	0.02724	2.716E-4	0.07787	0.1248	0.1832	1001	10000
+	p[3]	0.07434	0.02363	2.559E-4	0.03487	0.07193	0.1275	1001	10000
+	p[4]	0.05785	0.008047	8.135E-5	0.04316	0.05755	0.07471	1001	10000
+	p[5]	0.0422	0.01383	1.234E-4	0.01952	0.04073	0.07318	1001	10000
+	p[6]	0.07033	0.01812	1.909E-4	0.03931	0.06892	0.1104	1001	10000
+	p[7]	0.06632	0.02015	1.899E-4	0.03252	0.06421	0.1104	1001	10000
+	p[8]	0.1477	0.02434	2.437E-4	0.1034	0.1464	0.1993	1001	10000
+	p[9]	0.07175	0.01779	2.016E-4	0.04124	0.07009	0.1104	1001	10000
+	p[10]	0.09067	0.02841	2.962E-4	0.04379	0.08805	0.1531	1001	10000
+	p[11]	0.1162	0.01991	1.78E-4	0.0798	0.1154	0.1577	1001	10000
+	p[12]	0.06895	0.01328	1.331E-4	0.04508	0.06824	0.0974	1001	10000
+
+
+and for the random effects analysis
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	mu	-2.558	0.1535	0.002212	-2.887	-2.551	-2.27	1001	10000
+	p[1]	0.0528	0.01961	3.693E-4	0.01808	0.05184	0.09351	1001	10000
+	p[2]	0.103	0.0218	3.087E-4	0.06661	0.1007	0.1514	1001	10000
+	p[3]	0.07071	0.01761	1.967E-4	0.03945	0.06959	0.1094	1001	10000
+	p[4]	0.05925	0.007902	1.004E-4	0.04465	0.05888	0.07572	1001	10000
+	p[5]	0.05147	0.01334	2.515E-4	0.02754	0.05074	0.07966	1001	10000
+	p[6]	0.06915	0.01483	1.696E-4	0.04261	0.06857	0.1008	1001	10000
+	p[7]	0.06683	0.01586	1.978E-4	0.03815	0.06577	0.1008	1001	10000
+	p[8]	0.1237	0.02263	4.045E-4	0.08425	0.1222	0.1715	1001	10000
+	p[9]	0.06967	0.0145	1.629E-4	0.04397	0.06881	0.1003	1001	10000
+	p[10]	0.07849	0.02007	2.362E-4	0.04508	0.07691	0.1236	1001	10000
+	p[11]	0.1022	0.01769	2.439E-4	0.07143	0.1009	0.1407	1001	10000
+	p[12]	0.06865	0.01173	1.419E-4	0.04703	0.06816	0.093	1001	10000
+	pop.mean	0.07258	0.01016	1.443E-4	0.05282	0.07234	0.09361	1001	10000
+	sigma	0.4077	0.1611	0.004062	0.1664	0.3835	0.7937	1001	10000
+
+
+A particular strength of the Markov chain Monte Carlo (Gibbs sampling) approach implemented in BUGS is the ability to make inferences on arbitrary functions of unknown model parameters. For example, we may compute the rank probabilty of failure for each hospital at each iteration. This yields a sample from the posterior distribution of the ranks. 
+
+The figures below show the posterior ranks for the estimated surgical mortality rate in each hospital for the random effect models. These are obtained by setting the rank monitor for variable p (select the "Rank" option from the "Statistics" menu) after the burn-in phase, and then selecting the "histogram" option from this menu after a further 10000 updates. These distributions illustrate the considerable uncertainty associated with 'league tables': there are only 2 hospitals (H and K) whose intervals exclude the median rank and none whose intervals fall completely within the lower or upper quartiles. 
+
+
+Plots of distribution of ranks of true failure probability for random effects model:
+
+
+
+

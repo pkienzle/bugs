@@ -1,0 +1,237 @@
+		Hips model 3: MC estimates for
+									each strata, allowing
+						 		for parameter uncertainty in
+								 revision hazard, h - gives
+								 results for Table 3
+
+Spiegelhalter, D.J. and Best, N.G. ᰠBayesian approaches to multiple sources of evidence and uncertainty in complex cost-effectiveness modellingᴠ. Statistics in Medicine 22, (2003), 3687-3709.
+
+n = 10000 updates (1 per simulated set of parameter values) are required for this model; monitor C, BL, BQ to get posterior mean and sd for each subgroup for results in top part of Table 3.
+
+For results in bottom part of Table 3:
+
+Approach 1: p(s, theta) = p(s | theta) p(theta)
+m_theta and v_theta are the mean and variance across subgroups for a given value of theta
+=> within BUGS code, calculate mean and variance of C[k], BL[k], BQ[k] across subgroups at each iteration, then take   Monte Carlo expectation at end of run
+=> monitor mean.C, mean.BL, mean.BQ, var.C, var.BL, var.BQ
+
+Approach 2: p(s, theta) = p(theta | s) p(s)
+overall mean, m = weighted mean of posterior means of C[k], BL[k], BQ[k]  => calculate after BUGS run var due to uncertainty, vP2 = weighted mean of posterior variances of C[k], BL[k], BQ[k]   => calculate after BUGS run var due to heterogeneity = vH2 = weighted variance of posterior means of C[k], BL[k], BQ[k]   => calculate after BUGS run
+
+Sections of the code that have changed from Model 1 are shown in bold
+
+	model {
+
+		for(k in 1 : K) {    # loop over strata
+
+		# Cost and benefit equations 
+		#######################
+
+		# Costs
+			for(t in 1 : N) {
+				ct[k, t] <- inprod(pi[k, t, ], c[]) / pow(1 + delta.c, t - 1)
+			} 
+			C[k] <- C0 + sum(ct[k, ])
+
+			# Benefits - life expectancy
+			for(t in 1 : N) {
+				blt[k, t] <- inprod(pi[k, t, ], bl[]) / pow(1 + delta.b, t - 1)
+			} 
+			BL[k] <- sum(blt[k, ])
+
+			# Benefits - QALYs
+			for(t in 1 : N) {
+				bqt[k, t] <- inprod(pi[k, t, ], bq[]) / pow(1 + delta.b, t - 1)
+			} 
+			BQ[k] <- sum(bqt[k, ])
+
+
+			# Markov model probabilities:
+			#######################
+
+			# Transition matrix
+			for(t in 2 : N) {
+				Lambda[k, t, 1, 1] <- 1 -  gamma[k, t] - lambda[k, t]
+				Lambda[k, t, 1, 2] <- gamma[k, t] * lambda.op
+				Lambda[k, t, 1, 3] <- gamma[k, t] *(1 - lambda.op)
+				Lambda[k, t, 1, 4] <- 0
+				Lambda[k, t, 1, 5] <- lambda[k, t] 
+
+				Lambda[k, t, 2, 1] <- 0
+				Lambda[k, t, 2, 2] <- 0 
+				Lambda[k, t, 2, 3] <- 0 
+				Lambda[k, t, 2, 4] <- 0 
+				Lambda[k, t, 2, 5] <- 1 
+
+				Lambda[k, t, 3, 1] <- 0
+				Lambda[k, t, 3, 2] <- 0 
+				Lambda[k,t,3,3] <- 0
+				Lambda[k, t, 3, 4] <- 1 -  lambda[k, t]
+				Lambda[k, t, 3, 5] <- lambda[k, t]
+
+				Lambda[k, t, 4, 1] <- 0
+				Lambda[k, t, 4, 2] <- rho * lambda.op
+				Lambda[k,t,4,3] <- rho * (1 -  lambda.op)
+				Lambda[k, t, 4, 4] <- 1 - rho - lambda[k, t]
+				Lambda[k, t, 4, 5] <- lambda[k, t]
+
+				Lambda[k, t, 5, 1] <- 0
+				Lambda[k, t, 5, 2] <- 0 
+				Lambda[k, t, 5, 3] <- 0
+				Lambda[k, t, 5, 4] <- 0
+				Lambda[k, t, 5,5 ] <- 1
+
+				gamma[k, t] <- h[k] * (t - 1)
+			}
+
+			# Marginal probability of being in each state at time 1
+			pi[k,1,1] <- 1 - lambda.op   pi[k,1, 2] <- 0      pi[k,1, 3] <- 0 ;  
+			pi[k,1, 4] <- 0  pi[k,1, 5] <- lambda.op
+
+			# Marginal probability of being in each state at time t > 1
+			for(t in 2 : N) {
+				for(s in 1 : S) {
+					pi[k, t, s] <- inprod(pi[k, t - 1, ], Lambda[k, t, , s])
+				}
+			}
+		}
+
+		# age-sex specific revision hazard
+		for(k in 1 : K) { 
+			logh[k] ~ dnorm(logh0[k], tau)
+			h[k] <- exp(logh[k])  
+		}
+
+		# Calculate mean and variance across strata at each iteration 
+		# (Gives overall mean and variance using approach 1)
+
+		mean.C <- inprod(p.strata[], C[])
+		mean.BL <- inprod(p.strata[], BL[])
+		mean.BQ <- inprod(p.strata[], BQ[])
+
+		for(k in 1:12) {
+			C.dev[k] <- pow(C[k]-mean.C , 2)
+			BL.dev[k] <- pow(BL[k]-mean.BL , 2)
+			BQ.dev[k] <- pow(BQ[k]-mean.BQ , 2)
+		}
+		var.C <- inprod(p.strata[], C.dev[])
+		var.BL <- inprod(p.strata[], BL.dev[])
+		var.BQ <- inprod(p.strata[], BQ.dev[])
+
+	}
+
+
+Data ( click to open )
+
+Results 
+
+		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+	BL[1]	14.48	0.005187	5.283E-5	14.47	14.48	14.49	1001	10000
+	BL[2]	12.7	0.003639	3.725E-5	12.7	12.7	12.71	1001	10000
+	BL[3]	10.34	0.002139	2.116E-5	10.33	10.34	10.34	1001	10000
+	BL[4]	7.737	7.959E-4	7.636E-6	7.735	7.737	7.738	1001	10000
+	BL[5]	5.405	3.28E-4	2.884E-6	5.405	5.405	5.406	1001	10000
+	BL[6]	4.101	2.138E-4	2.076E-6	4.101	4.101	4.102	1001	10000
+	BL[7]	15.13	0.005066	5.231E-5	15.12	15.14	15.14	1001	10000
+	BL[8]	13.69	0.003893	3.735E-5	13.69	13.69	13.7	1001	10000
+	BL[9]	11.65	0.00244	2.304E-5	11.64	11.65	11.65	1001	10000
+	BL[10]	9.1	9.547E-4	1.045E-5	9.098	9.1	9.101	1001	10000
+	BL[11]	6.46	4.255E-4	3.758E-6	6.459	6.46	6.461	1001	10000
+	BL[12]	4.988	2.904E-4	2.841E-6	4.988	4.988	4.989	1001	10000
+	BQ[1]	13.17	0.06048	6.156E-4	13.04	13.17	13.28	1001	10000
+	BQ[2]	11.59	0.05145	5.266E-4	11.48	11.59	11.68	1001	10000
+	BQ[3]	9.468	0.03843	3.795E-4	9.388	9.471	9.536	1001	10000
+	BQ[4]	7.157	0.01903	1.827E-4	7.116	7.158	7.19	1001	10000
+	BQ[5]	5.019	0.01005	8.838E-5	4.996	5.019	5.036	1001	10000
+	BQ[6]	3.813	0.006754	6.559E-5	3.798	3.813	3.824	1001	10000
+	BQ[7]	13.82	0.05611	5.79E-4	13.7	13.82	13.92	1001	10000
+	BQ[8]	12.53	0.0508	4.869E-4	12.43	12.53	12.62	1001	10000
+	BQ[9]	10.69	0.03935	3.714E-4	10.61	10.7	10.76	1001	10000
+	BQ[10]	8.429	0.01994	2.182E-4	8.386	8.431	8.464	1001	10000
+	BQ[11]	6.004	0.0109	9.631E-5	5.98	6.004	6.022	1001	10000
+	BQ[12]	4.64	0.00759	7.427E-5	4.624	4.641	4.653	1001	10000
+	C[1]	5790.0	231.6	2.358	5363.0	5782.0	6264.0	1001	10000
+	C[2]	5426.0	200.1	2.048	5061.0	5415.0	5847.0	1001	10000
+	C[3]	4999.0	151.7	1.498	4730.0	4990.0	5316.0	1001	10000
+	C[4]	4472.0	76.16	0.731	4338.0	4466.0	4636.0	1001	10000
+	C[5]	4267.0	40.58	0.3568	4198.0	4263.0	4357.0	1001	10000
+	C[6]	4196.0	27.29	0.2651	4149.0	4194.0	4256.0	1001	10000
+	C[7]	5634.0	213.9	2.207	5241.0	5623.0	6073.0	1001	10000
+	C[8]	5362.0	196.4	1.882	5007.0	5353.0	5771.0	1001	10000
+	C[9]	5008.0	154.4	1.457	4733.0	4998.0	5342.0	1001	10000
+	C[10]	4494.0	79.31	0.8679	4356.0	4488.0	4666.0	1001	10000
+	C[11]	4285.0	43.75	0.3864	4211.0	4282.0	4381.0	1001	10000
+	C[12]	4214.0	30.48	0.2982	4162.0	4212.0	4281.0	1001	10000
+	mean.BL	8.687	4.589E-4	4.49E-6	8.686	8.687	8.688	1001	10000
+	mean.BQ	8.015	0.008212	8.205E-5	7.998	8.015	8.03	1001	10000
+	mean.C	4609.0	32.46	0.3246	4549.0	4609.0	4675.0	1001	10000
+	var.BL	6.714	0.003016	2.785E-5	6.708	6.714	6.72	1001	10000
+	var.BQ	5.466	0.03851	3.513E-4	5.39	5.467	5.541	1001	10000
+	var.C	174600.0	28630.0	278.0	123900.0	172900.0	235600.0	1001	10000
+
+
+Note: results for the bottom panel of Table 3 (approach 1) for costs are given by
+m = posterior mean of mean.C = 4609
+vP1 = posterior variance of mean.C = 31.82 * 31.82
+vH1 = posterior mean of var.C = 174400
+
+
+	'Model' to calculate overall mean (m), var due to uncertainty (vP2) and var due to heterogeneity (vH2) 	using approach 2
+	
+	No updates needed - just compile model, load data, and gen inits, then use node tool from info menu to obtain values of 	mC, mBL, mBQ, vP2.C, vP2.BL, vP2.BQ, vH2.C, vH2.BL, vH2.BQ, TC, TBL, TBQ, pcC, pcBL, pcBQ.
+
+	model { 
+	
+	  # overall mean outcome (m)
+   mC <- inprod(p.strata[], C[])
+   mBL <- inprod(p.strata[], BL[])
+   mBQ <- inprod(p.strata[], BQ[])
+
+   # variance due to uncertainty, vP
+   for(k in 1:12) {
+     VC[k] <- sdC[k]*sdC[k]
+     VBL[k] <- sdBL[k]*sdBL[k]
+     VBQ[k] <- sdBQ[k]*sdBQ[k]
+   }
+   vP2.C <- inprod(p.strata[], VC[])
+   vP2.BL <- inprod(p.strata[], VBL[])
+   vP2.BQ <- inprod(p.strata[], VBQ[])
+
+   # variance due to heterogeneity, vH
+   for(k in 1:12) { devC[k]  <- pow(C[k] - mC, 2) }
+   vH2.C <- inprod(p.strata[], devC[])
+   for(k in 1:12) { devBL[k]  <- pow(BL[k] - mBL, 2) }
+   vH2.BL <- inprod(p.strata[], devBL[])
+   for(k in 1:12) { devBQ[k]  <- pow(BQ[k] - mBQ, 2) }
+   vH2.BQ <- inprod(p.strata[], devBQ[])
+
+   # Percent of total variance due to heterogeneity
+   TC <- vP2.C + vH2.C
+   pcC <- vH2.C/TC
+   TBL <- vP2.BL + vH2.BL
+   pcBL <- vH2.BL/TBL
+   TBQ <- vP2.BQ + vH2.BQ
+   pcBQ <- vH2.BQ/TBQ
+
+}
+
+
+Data ( click to open, posterior means and posterior sd of C, BL and BQ from running model 3)
+
+Results 
+
+mC      4609.03
+mBL      8.687390000000001
+mBQ      8.01488
+vP2.C      11472.793425
+vP2.BL      3.3068250474E-6
+vP2.BQ      7.493649773900001E-4
+vH2.C      163953.4291
+vH2.BL      6.713258897899999
+vH2.BQ      5.464389485600001
+TC      175426.222525
+TBL      6.713262204725046
+TBQ      5.465138850577391
+pcC      0.9346004647431485
+pcBL      0.999999507419054
+pcBQ      0.9998628827193821
