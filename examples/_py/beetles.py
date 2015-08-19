@@ -11,24 +11,31 @@
 #}
 
 from bumps.names import *
-from bumps import bugs
-from bumps.bugsmodel import ilogit, dnorm_llf, dbin_llf
+from bugs.parse import load, define_pars
+from bugs.model import logit, probit, cloglog, inverse, dnorm_llf, dbin_llf
 
 #  data: x[N],n[N],r[N],N
 vars = "x,n,r,N".split(',')
-_,data = bugs.load('../Beetlesdata.txt')
+_,data = load('../Beetlesdata.txt')
 x,n,r,N = (data[p] for p in vars)
 xbar = np.mean(x)
 # init: alpha.star, beta
 pars = 'alpha.star,beta'.split(',')
-_,init = bugs.load('../Beetlesinits.txt')
-p0 = np.hstack([init[s] for s in pars])
+_,init = load('../Beetlesinits.txt')
+p0, labels = define_pars(init, pars)
 
+model_name = sys.argv[1] if len(sys.argv)>1 else 'logit'
+available_models = {
+     'logit': logit,
+     'probit': probit,
+     'cloglog': cloglog,
+     }
+inv_p_model = inverse[available_models[model_name]]
 
 def beetles(pars):
     cost = 0
     alpha_star, beta = pars
-    p = np.array([ilogit(alpha_star + beta*(xi-xbar)) for xi in x])
+    p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
     cost += np.sum(dbin_llf(r,p,n))
     cost += dnorm_llf(beta, 0.0, 0.001)
     cost += dnorm_llf(alpha_star, 0.0, 0.001)
@@ -37,12 +44,11 @@ def beetles(pars):
 def transform(pars):
     alpha_star, beta = pars
     alpha = alpha_star - beta*np.mean(x)
-    p = ilogit(alpha_star + beta*(x-xbar))
+    p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
     rhat = n*p
     return np.hstack([alpha, beta, rhat])
 
-num_pars = len(p0)
-problem = DirectPDF(beetles, num_pars, N-num_pars)
+problem = DirectPDF(beetles, p0, labels=labels, dof=N-len(p0))
 problem.setp(p0)
 
 #	mean	sd	median	2.5pc	97.5pc

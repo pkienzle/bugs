@@ -419,6 +419,26 @@ def load(filename):
         return loads(fid.read())
 
 
+def define_pars(init, pars):
+    parts = []
+    labels = []
+    for name in pars:
+        value = init[name]
+        if isinstance(value, np.ndarray):
+            if len(value.shape) == 1:
+                labels.extend(name+"[%d]"%(i+1) for i,_ in enumerate(value))
+            else:
+                labels.extend(name+"[%d,%d]"%(i+1,j+1)
+                              for i in range(value.shape[0])
+                              for j in range(value.shape[1]))
+            parts.append(value.flatten())
+        else:
+            labels.append(name)
+            parts.append(value)
+    p0 = np.hstack(parts)
+    return p0, labels
+
+
 ##############################################################################
 # Parse tree operations
 ##############################################################################

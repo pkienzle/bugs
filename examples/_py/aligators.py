@@ -62,17 +62,19 @@
 #}
 
 from bumps.names import *
-from bumps import bugs
-from bumps.bugsmodel import dnorm_llf, dpois_llf, dmulti_llf
+from bugs.parse import load, define_pars
+from bugs.model import dnorm_llf, dpois_llf, dmulti_llf
 
 #  data: I, J, K, X[I,J,K]
 vars = "I,J,K,X".split(',')
-_,data = bugs.load('../Aligatorsdata.txt')
+_,data = load('../Aligatorsdata.txt')
 I,J,K,X = (data[p] for p in vars)
 # init: alpha[K], beta[I,K], gamma[J,K], lambda[I,J]
 pars = "alpha,beta,gamma,lambda".split(',')
-_,init = bugs.load('../Aligatorsinits.txt')
-p0 = np.hstack(init[s].flat for s in pars)
+_,init = load('../Aligatorsinits.txt')
+print pars
+print init
+p0, labels = define_pars(init, pars)
 active_index = ~np.isnan(p0)
 
 
@@ -117,7 +119,8 @@ def aligators(active_pars):
     return -cost
 
 num_pars = np.sum(active_index)
-problem = DirectPDF(aligators, num_pars, I*J*K-num_pars)
+dof = I*J*K-num_pars
+problem = DirectPDF(aligators, p0[active_index], labels=labels, dof=dof)
 problem.setp(p0[active_index])
 
 #	mean	sd	median	2.5pc	97.5pc

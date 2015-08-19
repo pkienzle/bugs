@@ -11,19 +11,19 @@
 # }
 
 from bumps.names import *
-from bumps import bugs
-from bumps.bugsmodel import dbin_llf, dnorm_llf, ilogit
+from bugs.parse import load, define_pars
+from bugs.model import dbin_llf, dnorm_llf, logit, inverse
 
 # J, y[J], n[J], Z[J], tau, alpha, beta
-_,data = bugs.load('../Airdata.txt')
+_,data = load('../Airdata.txt')
 J = data["J"]
 # theta[2], X[J]
-_,init = bugs.load('../Airinits.txt')
-p0 = np.hstack([init[s] for s in ("theta","X")])
+_,init = load('../Airinits.txt')
+p0, labels = define_pars(init, ("theta", "X"))
 
 def air(pars):
     theta, X = pars[0:2], pars[2:]
-    p = np.array([ilogit(theta[0] + theta[1]*Xj) for Xj in X])
+    p = np.array([inverse[logit](theta[0] + theta[1]*Xj) for Xj in X])
     mu = data["alpha"] + data["beta"] * data["Z"]
     cost = 0
     cost += np.sum(dbin_llf(data["y"], p, data["n"]))
@@ -33,7 +33,7 @@ def air(pars):
     return -cost
 
 
-problem = DirectPDF(air, len(p0), 1)
+problem = DirectPDF(air, p0, labels=labels, dof=1)
 problem.setp(p0)
 
 # From Air.txt

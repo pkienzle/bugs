@@ -10,8 +10,8 @@
 # }
 
 from bumps.names import *
-from bumps import bugs
-from bumps.bugsmodel import dcat_llf, round
+from bugs.parse import load, define_pars
+from bugs.model import dcat_llf, round
 
 raise NotImplementedError("No support for integer variables")
 
@@ -22,10 +22,10 @@ raise NotImplementedError("No support for integer variables")
 # p.lung.cancer[p.smoking,No/Yes]
 # p.xray[p.bronchitis|p.lung.cancer,No/Yes]
 # p.dyspnoea[either,bronchitis,No/Yes]
-_,data = bugs.load('../Asiadata.txt')
+_,data = load('../Asiadata.txt')
 pars = "smoking,tuberculosis,lung.cancer,bronchitis,xray".split(',')
-_,init = bugs.load('../Asiainits.txt')
-p0 = np.hstack([init[s] for s in pars])
+_,init = load('../Asiainits.txt')
+p0, labels = define_pars(init, pars)
 
 def asia(pars):
     smoking, tuberculosis, lung_cancer, bronchitis, xray = (round(p) for p in pars)
@@ -39,7 +39,7 @@ def asia(pars):
     return -cost
 
 
-problem = DirectPDF(asia, len(p0), 1)
+problem = DirectPDF(asia, p0, labels=labels, dof=1)
 problem.setp(p0)
 for i,p in enumerate(problem.p):
     problem._bounds[:,i] = [1,2]

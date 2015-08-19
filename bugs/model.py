@@ -1,6 +1,8 @@
 ##############################################################################
 # Distribution log likelihood functions
 ##############################################################################
+from __future__ import division
+
 import scipy.special
 from scipy.special import betaln, gammaln
 import math
@@ -8,6 +10,8 @@ import numpy as np
 from numpy import exp, log, pi, inf
 LOG_1_ROOT_2PI = -0.5*log(2*pi)
 ROOT_2 = math.sqrt(2)
+
+
 
 def binomln(n, k): return -betaln(1 + n - k, 1 + k) - log(n + 1)
 def logfact(k): return gammaln(k+1)
@@ -17,12 +21,23 @@ def cloglog(x): return log(-log(1-x))
 gammap = scipy.special.gammainc
 def ilogit(x): return math.exp(x)/(1+math.exp(x)) if x < 0 else 1/(1+math.exp(-x))
 def iclogit(x): return 1 - math.exp(-math.exp(x))
-def phi(x): return 0.5*(1+scipy.special.erf(x/ROOT_2))
 def probit(x): return ROOT_2 * scipy.special.erfinv(2*x-1)
+def phi(x): return 0.5*(1+scipy.special.erf(x/ROOT_2))
 def round(x): return math.floor(x+1)
 def step(x): return 1 if x >=0 else 0
 def rank(v, s): return len(vi for vi in v if v < s)
 def sort(v): return list(sorted(v))
+
+inverse = {
+    logit: ilogit,
+    probit: phi,
+    cloglog: iclogit,
+    math.log: math.exp,
+    math.sin: math.asin,
+    math.cos: math.acos,
+    math.tan: math.atan,
+    }
+inverse.update((v,k) for k,v in inverse.items())
 
 def wrap(fn):
     @staticmethod
