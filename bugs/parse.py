@@ -585,7 +585,7 @@ def unboundv(model):
 
     The undefined variables must be supplied by the data.
     """
-    return variables(model) - boundv(model) - freev(model) - loopv(model)
+    return variables(model) - (boundv(model) | freev(model) | loopv(model))
 
 
 def observed(model, data):
@@ -854,9 +854,6 @@ github at:
 Options are as follows:
 
     -s  pretty print the model or data
-    -d  show variables required by the model/defined by the data
-    -p  show fitting parameters
-    -b  show variables defined by the model
     -v  show all variables, including loop variables
 """)
         sys.exit(1)
@@ -869,29 +866,24 @@ Options are as follows:
             import traceback
             print("=== %s : unknown ==="%f)
             print(traceback.format_exc())
-        if len(files) > 1:
-            print("=== %s : %s ==="%(f,t))
+            continue
+        print("=== %s : %s ==="%(f,t))
         if t == "model":
-            if view: print(pretty(v))
-            if 'f' in opts:
-                if view:
-                    print("functions:", ", ".join(sorted(set(functions(v)))))
-                else:
-                    print("\n".join(functions(v)))
+            if view:
+                print(pretty(v))
             if 'v' in opts:
+                print("functions:", ", ".join(sorted(set(functions(v)))))
                 print("variables:", ", ".join(sorted(variables(v))))
-            if 'b' in opts:
-                print("bound variables:", ", ".join(sorted(boundv(v))))
-            if 'd' in opts:
-                print("data variables:", ", ".join(sorted(datav(v))))
-            if 'p' in opts:
-                print("parameters:", ", ".join(sorted(freev(v))))
+                print("  unbound:", ", ".join(sorted(unboundv(v))))
+                print("  bound:", ", ".join(sorted(boundv(v))))
+                print("  free:", ", ".join(sorted(freev(v))))
+                print("  loop:", ", ".join(sorted(loopv(v))))
         elif t == "data":
-            if view: print(pretty_data(v))
-            if 'd' in opts:
-                print(", ".join(sorted(v.keys())))
+            if view:
+                print(pretty_data(v))
         else:
-            if view: print(v)
+            if view:
+                print(v)
         #for f in walk(v): print(f)
 
 if __name__ == "__main__":
