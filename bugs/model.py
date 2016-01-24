@@ -13,20 +13,42 @@ ROOT_2 = math.sqrt(2)
 
 
 
-def binomln(n, k): return -betaln(1 + n - k, 1 + k) - log(n + 1)
-def logfact(k): return gammaln(k+1)
-def logdet(A): return math.log(np.linalg.det(A))
-def logit(x):  return math.log(x/(1-x))
-def cloglog(x): return log(-log(1-x))
+def binomln(n, k):
+    return -betaln(1 + n - k, 1 + k) - log(n + 1)
+def logfact(k):
+    return gammaln(k+1)
+def logdet(A):
+    return log(np.linalg.det(A))
+def logit(x):
+    return log(x/(1-x))
+def cloglog(x):
+    return log(-log(1-x))
 gammap = scipy.special.gammainc
-def ilogit(x): return math.exp(x)/(1+math.exp(x)) if x < 0 else 1/(1+math.exp(-x))
-def iclogit(x): return 1 - math.exp(-math.exp(x))
-def probit(x): return ROOT_2 * scipy.special.erfinv(2*x-1)
-def phi(x): return 0.5*(1+scipy.special.erf(x/ROOT_2))
-def round(x): return math.floor(x+1)
-def step(x): return 1 if x >=0 else 0
-def rank(v, s): return len(vi for vi in v if v < s)
-def sort(v): return list(sorted(v))
+def ilogit(x):
+    if np.isscalar(x):
+        ret = math.exp(x)/(1+math.exp(x)) if x < 0 else 1/(1+math.exp(-x))
+    else:
+        ret = np.empty_like(x)
+        idx = (x<0)
+        neg = x[idx]
+        ret[idx] = exp(neg)/(1.0+exp(neg))
+        ret[~idx] = 1.0/(1.0+exp(-x[~idx]))
+    return ret
+def iclogit(x):
+    return  -np.expm1(-np.exp(x))
+def probit(x):
+    return ROOT_2 * scipy.special.erfinv(2*x-1)
+def phi(x):
+    return 0.5*(1+scipy.special.erf(x/ROOT_2))
+def round(x):
+    return np.round(x)
+#def step(x): return 1.0 if x >=0 else 0
+def step(x):
+    return 1.0*(x>=0)
+def rank(v, s):
+    return len(vi for vi in v if v < s)
+def sort(v):
+    return list(sorted(v))
 
 inverse = {
     logit: ilogit,
@@ -293,9 +315,13 @@ def dweib_llf(x, v, L):
 
 # ==== discrete multivariate distributions ====
 def dmulti_llf(x, p, n):
-    """mulinomial([x1,...,xk]; [p1,...,pk], n)"""
-    return gammaln(n+1) - np.sum(gammaln(x+1)) + np.sum(x*log(p))
+    r"""
+    mulinomial([x1,...,xk]; [p1,...,pk], n)
 
+    Note: $x$ values for $p \leq 0$ are ignored.
+    """
+    x,p = x[p>0], p[p>0]
+    return gammaln(n+1) - np.sum(gammaln(x+1)) + np.sum(x*log(p))
 
 # ==== continuous multivariate distributions ====
 def ddirich_llf(x, alpha):

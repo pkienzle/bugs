@@ -16,7 +16,7 @@ from bugs.model import dbin_llf, dnorm_llf, logit, inverse
 
 # J, y[J], n[J], Z[J], tau, alpha, beta
 _,data = load('../Airdata.txt')
-J = data["J"]
+# J = data["J"]
 # theta[2], X[J]
 _,init = load('../Airinits.txt')
 p0, labels = define_pars(init, ("theta", "X"))

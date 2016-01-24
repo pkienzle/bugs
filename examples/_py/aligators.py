@@ -71,15 +71,14 @@ _,data = load('../Aligatorsdata.txt')
 I,J,K,X = (data[p] for p in vars)
 # init: alpha[K], beta[I,K], gamma[J,K], lambda[I,J]
 pars = "alpha,beta,gamma,lambda".split(',')
-_,init = load('../Aligatorsinits.txt')
-print pars
-print init
+#_,init = load('../Aligatorsinits.txt')
+_,init = load('../Aligatorsinits1.txt')
 p0, labels = define_pars(init, pars)
 active_index = ~np.isnan(p0)
-
+labels = [label for label,active in zip(labels,active_index) if active]
 
 def aligators(active_pars):
-    pars = p0[:]
+    pars = p0.copy()
     pars[active_index] = active_pars
     alpha = pars[0:K]
     beta = pars[K:K+I*K].reshape(I,K)
@@ -112,16 +111,35 @@ def aligators(active_pars):
         mu = np.exp(Lambda[:,:,None] + alpha[None,None,:] + beta[:,None,:] + gamma[None,:,:])
         cost += np.sum(dpois_llf(X, mu))
 
+    return -cost
+
+def post(active_pars):
+    samples = active_pars.shape[1]
     # TRANSFORM OUTPUT TO ENABLE COMPARISON
     #  WITH AGRESTI'S RESULTS
+    pars = np.tile(p0,(samples,1)).T
+    pars[active_index] = active_pars
+    beta = pars[K:K+I*K,:].reshape(I,K,samples)
+    gamma = pars[K+I*K:K+I*K+J*K,:].reshape(J,K,samples)
     b = beta - np.mean(beta, axis=0) # sum to zero constraint
     g = gamma - np.mean(gamma, axis=0) # sum to zero constraint
-    return -cost
+    b = b.reshape(I*K,samples)
+    g = g.reshape(J*K,samples)
+    newvars = [bk for bk in b]+[gk for gk in g]
+    return newvars
+bvars = ["b[%d,%d]"%(i+1,k+1) for i in range(I) for k in range(K)]
+gvars = ["g[%d,%d]"%(j+1,k+1) for j in range(J) for k in range(K)]
+post_vars = bvars + gvars
 
 num_pars = np.sum(active_index)
 dof = I*J*K-num_pars
 problem = DirectPDF(aligators, p0[active_index], labels=labels, dof=dof)
 problem.setp(p0[active_index])
+problem.derive_vars = post, post_vars
+bvars = ["b[%d,%d]"%(i+1,k+2) for i in range(4) for k in range(4)]
+gvars = ["g[%d,%d]"%(i+1,k+2) for i in range(2) for k in range(4)]
+problem.visible_vars = bvars + gvars
+#problem.visible_vars = ["b[1,2]", "g[1,2]"]
 
 #	mean	sd	median	2.5pc	97.5pc
 #b[1,2]	-1.83	0.4312	-1.804	-2.732	-1.056

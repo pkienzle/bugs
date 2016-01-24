@@ -420,6 +420,9 @@ def load(filename):
 
 
 def define_pars(init, pars):
+    """
+
+    """
     parts = []
     labels = []
     for name in pars:
@@ -427,10 +430,17 @@ def define_pars(init, pars):
         if isinstance(value, np.ndarray):
             if len(value.shape) == 1:
                 labels.extend(name+"[%d]"%(i+1) for i,_ in enumerate(value))
-            else:
+            elif len(value.shape) == 2:
                 labels.extend(name+"[%d,%d]"%(i+1,j+1)
                               for i in range(value.shape[0])
                               for j in range(value.shape[1]))
+            elif len(value.shape) == 3:
+                labels.extend(name+"[%d,%d,%d]"%(i+1,j+1,k+1)
+                              for i in range(value.shape[0])
+                              for j in range(value.shape[1])
+                              for k in range(value.shape[2]))
+            else:
+                raise ValueError("Too many array dimensions for %s"%name)
             parts.append(value.flatten())
         else:
             labels.append(name)

@@ -13,7 +13,9 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, round
 
-raise NotImplementedError("No support for integer variables")
+import warnings
+warnings.warn("The Asia model contains integer parameters, which have not yet been shown to work in Bumps")
+#raise NotImplementedError("No support for integer variables")
 
 # asia, dyspnoea
 # p.smoking[No/Yes]
@@ -28,7 +30,8 @@ _,init = load('../Asiainits.txt')
 p0, labels = define_pars(init, pars)
 
 def asia(pars):
-    smoking, tuberculosis, lung_cancer, bronchitis, xray = (round(p) for p in pars)
+    smoking, tuberculosis, lung_cancer, bronchitis, xray \
+        = np.asarray(np.round(pars),'i')
     cost = 0
     cost += dcat_llf(smoking, data['p.smoking'])
     cost += dcat_llf(lung_cancer, data['p.lung.cancer'][smoking-1])
@@ -38,11 +41,25 @@ def asia(pars):
     cost += dcat_llf(data['dyspnoea'], data['p.dyspnoea'][either-1,bronchitis-1])
     return -cost
 
+def post(pars):
+    smoking, tuberculosis, lung_cancer, bronchitis, xray = pars
+    either = np.maximum(tuberculosis, lung_cancer)
+    return [either]
+post_vars = ["either"]
+
 
 problem = DirectPDF(asia, p0, labels=labels, dof=1)
 problem.setp(p0)
 for i,p in enumerate(problem.p):
-    problem._bounds[:,i] = [1,2]
+    problem._bounds[:,i] = [0.500000001,2.499999999]
+problem.derive_vars = post, post_vars
+problem.visible_vars = [
+    "bronchitis", "either", "lung.cancer", "smoking", "tuberculosis", "xray",
+    ]
+problem.integer_vars = [
+    "bronchitis", "either", "lung.cancer", "smoking", "tuberculosis", "xray",
+]
+
 
 # From Asia.txt
 #               mean	sd	median	2.5pc	97.5pc

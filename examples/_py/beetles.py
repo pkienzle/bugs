@@ -15,7 +15,7 @@ from bugs.parse import load, define_pars
 from bugs.model import logit, probit, cloglog, inverse, dnorm_llf, dbin_llf
 
 #  data: x[N],n[N],r[N],N
-vars = "x,n,r,N".split(',')
+vars = "x n r N".split()
 _,data = load('../Beetlesdata.txt')
 x,n,r,N = (data[p] for p in vars)
 xbar = np.mean(x)
@@ -41,15 +41,18 @@ def beetles(pars):
     cost += dnorm_llf(alpha_star, 0.0, 0.001)
     return -cost
 
-def transform(pars):
+def post(pars):
     alpha_star, beta = pars
     alpha = alpha_star - beta*np.mean(x)
     p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
-    rhat = n*p
-    return np.hstack([alpha, beta, rhat])
+    rhat = n[:,None]*p
+    return np.vstack([alpha[None,:], beta[None,:], rhat])
+post_vars = ["alpha", "beta"] + ["rhat%d"%j for j in range(1,9)]
 
 problem = DirectPDF(beetles, p0, labels=labels, dof=N-len(p0))
 problem.setp(p0)
+problem.derive_vars = post, post_vars
+problem.visible_vars = post_vars
 
 #	mean	sd	median	2.5pc	97.5pc
 #alpha	-60.76	5.172	-60.59	-71.41	-51.19

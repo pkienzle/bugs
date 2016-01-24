@@ -1,3 +1,23 @@
+#model
+#{
+#	for( i in 1 : N ) {
+#		for( j in 1 : T ) {
+#			Y[i , j] ~ dnorm(mu[i , j],tau.c)
+#			mu[i , j] <- alpha[i] + beta[i] * (x[j] - xbar)
+#		}
+#		alpha[i] ~ dnorm(alpha.c,alpha.tau)
+#		beta[i] ~ dnorm(beta.c,beta.tau)
+#	}
+#	tau.c ~ dgamma(0.001,0.001)
+#	sigma <- 1 / sqrt(tau.c)
+#	alpha.c ~ dnorm(0.0,1.0E-6)
+#	alpha.tau ~ dgamma(0.001,0.001)
+#	beta.c ~ dnorm(0.0,1.0E-6)
+#	beta.tau ~ dgamma(0.001,0.001)
+#	alpha0 <- alpha.c - xbar * beta.c
+#}
+
+
 from bumps.names import *
 
 ## Rats model
@@ -46,3 +66,10 @@ problem._bounds[0,2*N+4] = 0
 problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = ["alpha0", "beta.c", "sigma"]
+
+
+
+#		mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
+#	alpha0	106.6	3.666	0.04102	99.29	106.6	113.7	1001	10000
+#	beta.c	6.186	0.1088	0.001316	5.971	6.187	6.398	1001	10000
+#	sigma	6.092	0.4672	0.007633	5.254	6.06	7.095	1001	10000
