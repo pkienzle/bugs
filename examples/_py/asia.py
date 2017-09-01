@@ -24,21 +24,21 @@ warnings.warn("The Asia model contains integer parameters, which have not yet be
 # p.lung.cancer[p.smoking,No/Yes]
 # p.xray[p.bronchitis|p.lung.cancer,No/Yes]
 # p.dyspnoea[either,bronchitis,No/Yes]
-_,data = load('../Asiadata.txt')
+_, data = load('../Asiadata.txt')
 pars = "smoking,tuberculosis,lung.cancer,bronchitis,xray".split(',')
-_,init = load('../Asiainits.txt')
+_, init = load('../Asiainits.txt')
 p0, labels = define_pars(init, pars)
 
 def asia(pars):
     smoking, tuberculosis, lung_cancer, bronchitis, xray \
-        = np.asarray(np.round(pars),'i')
+        = np.asarray(np.round(pars), 'i')
     cost = 0
     cost += dcat_llf(smoking, data['p.smoking'])
     cost += dcat_llf(lung_cancer, data['p.lung.cancer'][smoking-1])
     cost += dcat_llf(bronchitis, data['p.bronchitis'][smoking-1])
     either = max(tuberculosis, lung_cancer)
     cost += dcat_llf(xray, data['p.xray'][either-1])
-    cost += dcat_llf(data['dyspnoea'], data['p.dyspnoea'][either-1,bronchitis-1])
+    cost += dcat_llf(data['dyspnoea'], data['p.dyspnoea'][either-1, bronchitis-1])
     return -cost
 
 def post(pars):
@@ -48,10 +48,10 @@ def post(pars):
 post_vars = ["either"]
 
 
-problem = DirectPDF(asia, p0, labels=labels, dof=1)
+problem = DirectProblem(asia, p0, labels=labels, dof=1)
 problem.setp(p0)
-for i,p in enumerate(problem.p):
-    problem._bounds[:,i] = [0.500000001,2.499999999]
+for i, p in enumerate(problem.p):
+    problem._bounds[:, i] = [0.500000001, 2.499999999]
 problem.derive_vars = post, post_vars
 problem.visible_vars = [
     "bronchitis", "either", "lung.cancer", "smoking", "tuberculosis", "xray",

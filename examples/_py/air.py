@@ -33,7 +33,7 @@ def air(pars):
     return -cost
 
 
-problem = DirectPDF(air, p0, labels=labels, dof=1)
+problem = DirectProblem(air, p0, labels=labels, dof=1)
 problem.setp(p0)
 
 # From Air.txt
