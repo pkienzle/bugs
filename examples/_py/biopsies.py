@@ -16,8 +16,8 @@ from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, ddirich_llf, dmulti_llf
 
 # data: biopsies, error, ns, prior
-_,data = load('../Biopsiesdata.txt')
-_,init = load('../Biopsiesinits.txt')
+_, data = load('../Biopsiesdata.txt')
+_, init = load('../Biopsiesinits.txt')
 #_,init = load('../Biopsiesinits1.txt')
 
 ns = data['ns']
@@ -72,7 +72,7 @@ true = np.array([find_true(s) for s in biopsies])
 #labels = [label for active,label in zip(active_index,labels) if active]
 p = init["p"]
 ei = init["error"]
-p0 = np.hstack((p[0:3], ei[1,0:1], ei[2,0:2], ei[3,0:3]))
+p0 = np.hstack((p[0:3], ei[1, 0:1], ei[2, 0:2], ei[3, 0:3]))
 labels = "p[1] p[2] p[3] error[2,1] error[3,1] error[3,2] error[4,1] error[4,2] error[4,3]".split()
 
 # Reconstruct the missing dirichlet component for display
@@ -86,17 +86,17 @@ post_labels = list("p[4] error[2,2] error[3,3] error[4,4]".split())
 
 def model(pars):
     p = np.zeros(4, 'd')
-    error = np.zeros((4,4),'d')
+    error = np.zeros((4, 4), 'd')
     p[:3] = pars[:3]
-    error[1,0:1] = pars[3:4]
-    error[2,0:2] = pars[4:6]
-    error[3,0:3] = pars[6:9]
+    error[1, 0:1] = pars[3:4]
+    error[2, 0:2] = pars[4:6]
+    error[3, 0:3] = pars[6:9]
     p[3] = 1. - np.sum(p[:3])
-    error[0,0] = 1.
-    error[1,1] = 1. - error[1,0]
-    error[2,2] = 1. - (error[2,0] + error[2,1])
-    error[3,3] = 1. - (error[3,0] + error[3,1] + error[3,2])
-    if p[3] < 0. or error[2,2] < 0. or error[3,3] < 0.:
+    error[0, 0] = 1.
+    error[1, 1] = 1. - error[1, 0]
+    error[2, 2] = 1. - (error[2, 0] + error[2, 1])
+    error[3, 3] = 1. - (error[3, 0] + error[3, 1] + error[3, 2])
+    if p[3] < 0. or error[2, 2] < 0. or error[3, 3] < 0.:
         # Note: error[1,1] >= 0 since error[1,0] in [0,1]
         # error[0,0] is always more than 0.
         return np.inf
@@ -104,9 +104,9 @@ def model(pars):
     cost = 0.
     cost += sum(dmulti_llf(biopsies[i], error[true[i]-1], nbiops[i])
                 for i in range(ns))
-    cost += ddirich_llf(error[1,:1], prior[:1])
-    cost += ddirich_llf(error[2,:2], prior[:2])
-    cost += ddirich_llf(error[3,:3], prior[:3])
+    cost += ddirich_llf(error[1, :1], prior[:1])
+    cost += ddirich_llf(error[2, :2], prior[:2])
+    cost += ddirich_llf(error[3, :3], prior[:3])
     cost += ddirich_llf(p, prior)
     return -cost
 
@@ -115,7 +115,7 @@ def model(pars):
 # assigned to 'true', so the number of active elements in biopsies is just the
 # sum over all 'true' values.
 dof = np.sum(true) - len(p0)
-problem = DirectPDF(model, p0, labels=labels, dof=dof)
+problem = DirectProblem(model, p0, labels=labels, dof=dof)
 # p and error are probabilities in [0,1]
 problem._bounds[0,:] = 0
 problem._bounds[1,:] = 1

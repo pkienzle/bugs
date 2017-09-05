@@ -16,27 +16,27 @@ from bugs.model import logit, probit, cloglog, inverse, dnorm_llf, dbin_llf
 
 #  data: x[N],n[N],r[N],N
 vars = "x n r N".split()
-_,data = load('../Beetlesdata.txt')
-x,n,r,N = (data[p] for p in vars)
+_, data = load('../Beetlesdata.txt')
+x, n, r, N = (data[p] for p in vars)
 xbar = np.mean(x)
 # init: alpha.star, beta
 pars = 'alpha.star,beta'.split(',')
-_,init = load('../Beetlesinits.txt')
+_, init = load('../Beetlesinits.txt')
 p0, labels = define_pars(init, pars)
 
 model_name = sys.argv[1] if len(sys.argv)>1 else 'logit'
 available_models = {
-     'logit': logit,
-     'probit': probit,
-     'cloglog': cloglog,
-     }
+    'logit': logit,
+    'probit': probit,
+    'cloglog': cloglog,
+    }
 inv_p_model = inverse[available_models[model_name]]
 
 def beetles(pars):
     cost = 0
     alpha_star, beta = pars
     p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
-    cost += np.sum(dbin_llf(r,p,n))
+    cost += np.sum(dbin_llf(r, p, n))
     cost += dnorm_llf(beta, 0.0, 0.001)
     cost += dnorm_llf(alpha_star, 0.0, 0.001)
     return -cost
@@ -45,11 +45,11 @@ def post(pars):
     alpha_star, beta = pars
     alpha = alpha_star - beta*np.mean(x)
     p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
-    rhat = n[:,None]*p
-    return np.vstack([alpha[None,:], beta[None,:], rhat])
-post_vars = ["alpha", "beta"] + ["rhat%d"%j for j in range(1,9)]
+    rhat = n[:, None]*p
+    return np.vstack([alpha[None, :], beta[None, :], rhat])
+post_vars = ["alpha", "beta"] + ["rhat%d"%j for j in range(1, 9)]
 
-problem = DirectPDF(beetles, p0, labels=labels, dof=N-len(p0))
+problem = DirectProblem(beetles, p0, labels=labels, dof=N-len(p0))
 problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = post_vars

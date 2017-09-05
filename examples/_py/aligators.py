@@ -65,50 +65,51 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dpois_llf, dmulti_llf
 
-#  data: I, J, K, X[I,J,K]
+#  data: I, J, K, X[I, J, K]
 vars = "I,J,K,X".split(',')
-_,data = load('../Aligatorsdata.txt')
-I,J,K,X = (data[p] for p in vars)
-# init: alpha[K], beta[I,K], gamma[J,K], lambda[I,J]
+_, data = load('../Aligatorsdata.txt')
+I, J, K, X = (data[p] for p in vars)
+# init: alpha[K], beta[I, K], gamma[J, K], lambda[I, J]
 pars = "alpha,beta,gamma,lambda".split(',')
-#_,init = load('../Aligatorsinits.txt')
-_,init = load('../Aligatorsinits1.txt')
+#_, init = load('../Aligatorsinits.txt')
+_, init = load('../Aligatorsinits1.txt')
 p0, labels = define_pars(init, pars)
 active_index = ~np.isnan(p0)
-labels = [label for label,active in zip(labels,active_index) if active]
+labels = [label for label, active in zip(labels, active_index) if active]
 
 def aligators(active_pars):
     pars = p0.copy()
     pars[active_index] = active_pars
     alpha = pars[0:K]
-    beta = pars[K:K+I*K].reshape(I,K)
-    gamma = pars[K+I*K:K+I*K+J*K].reshape(J,K)
-    Lambda = pars[K+I*K+J*K:K+I*K+J*K+I*J].reshape(I,J)
+    beta = pars[K:K+I*K].reshape(I, K)
+    gamma = pars[K+I*K:K+I*K+J*K].reshape(J, K)
+    Lambda = pars[K+I*K+J*K:K+I*K+J*K+I*J].reshape(I, J)
 
     cost = 0
     alpha[0] = 0 # zero contrast for baseline food
     cost += np.sum(dnorm_llf(alpha[1:], 0, 0.00001)) # vague priors
 
     # Loop around lakes:
-    beta[0,:] = 0 # corner-point contrast with first lake
-    beta[:,0] = 0 # zero contrast for baseline food
-    cost += np.sum(dnorm_llf(beta[1:,1:], 0, 0.00001)) # vague priors
+    beta[0, :] = 0 # corner-point contrast with first lake
+    beta[:, 0] = 0 # zero contrast for baseline food
+    cost += np.sum(dnorm_llf(beta[1:, 1:], 0, 0.00001)) # vague priors
 
     # Loop around sizes:
-    gamma[0,:] = 0 # corner-point contrast with first size
-    gamma[:,0] = 0 # zero contrast for baseline food
-    cost += np.sum(dnorm_llf(gamma[1:,1:], 0, 0.00001)) # vague priors
+    gamma[0, :] = 0 # corner-point contrast with first size
+    gamma[:, 0] = 0 # zero contrast for baseline food
+    cost += np.sum(dnorm_llf(gamma[1:, 1:], 0, 0.00001)) # vague priors
 
     if 0:
         # Multinomial response
-        n = np.sum(X,axis=2)
-        phi = np.exp(alpha[None,None,:] + beta[:,None,:] + gamma[None,:,:])
+        n = np.sum(X, axis=2)
+        phi = np.exp(alpha[None, None, :] + beta[:, None, :] + gamma[None, :, :])
         p = phi/np.sum(phi, axis=2)
         cost += np.sum(dmulti_llf(X, p, n))
     else:
         # Fit standard Poisson regressions relative to baseline
         cost += np.sum(dnorm_llf(Lambda, 0, 0.00001)) # vague priors
-        mu = np.exp(Lambda[:,:,None] + alpha[None,None,:] + beta[:,None,:] + gamma[None,:,:])
+        mu = np.exp(Lambda[:, :, None] + alpha[None, None, :]
+                    + beta[:, None, :] + gamma[None, :, :])
         cost += np.sum(dpois_llf(X, mu))
 
     return -cost
@@ -117,29 +118,29 @@ def post(active_pars):
     samples = active_pars.shape[1]
     # TRANSFORM OUTPUT TO ENABLE COMPARISON
     #  WITH AGRESTI'S RESULTS
-    pars = np.tile(p0,(samples,1)).T
+    pars = np.tile(p0, (samples, 1)).T
     pars[active_index] = active_pars
-    beta = pars[K:K+I*K,:].reshape(I,K,samples)
-    gamma = pars[K+I*K:K+I*K+J*K,:].reshape(J,K,samples)
+    beta = pars[K:K+I*K, :].reshape(I, K, samples)
+    gamma = pars[K+I*K:K+I*K+J*K, :].reshape(J, K, samples)
     b = beta - np.mean(beta, axis=0) # sum to zero constraint
     g = gamma - np.mean(gamma, axis=0) # sum to zero constraint
-    b = b.reshape(I*K,samples)
-    g = g.reshape(J*K,samples)
+    b = b.reshape(I*K, samples)
+    g = g.reshape(J*K, samples)
     newvars = [bk for bk in b]+[gk for gk in g]
     return newvars
-bvars = ["b[%d,%d]"%(i+1,k+1) for i in range(I) for k in range(K)]
-gvars = ["g[%d,%d]"%(j+1,k+1) for j in range(J) for k in range(K)]
+bvars = ["b[%d, %d]"%(i+1, k+1) for i in range(I) for k in range(K)]
+gvars = ["g[%d, %d]"%(j+1, k+1) for j in range(J) for k in range(K)]
 post_vars = bvars + gvars
 
 num_pars = np.sum(active_index)
 dof = I*J*K-num_pars
-problem = DirectPDF(aligators, p0[active_index], labels=labels, dof=dof)
+problem = DirectProblem(aligators, p0[active_index], labels=labels, dof=dof)
 problem.setp(p0[active_index])
 problem.derive_vars = post, post_vars
-bvars = ["b[%d,%d]"%(i+1,k+2) for i in range(4) for k in range(4)]
-gvars = ["g[%d,%d]"%(i+1,k+2) for i in range(2) for k in range(4)]
+bvars = ["b[%d, %d]"%(i+1, k+2) for i in range(4) for k in range(4)]
+gvars = ["g[%d, %d]"%(i+1, k+2) for i in range(2) for k in range(4)]
 problem.visible_vars = bvars + gvars
-#problem.visible_vars = ["b[1,2]", "g[1,2]"]
+#problem.visible_vars = ["b[1, 2]", "g[1, 2]"]
 
 #	mean	sd	median	2.5pc	97.5pc
 #b[1,2]	-1.83	0.4312	-1.804	-2.732	-1.056
