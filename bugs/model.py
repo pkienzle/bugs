@@ -1,10 +1,10 @@
 ##############################################################################
 # Distribution log likelihood functions
 ##############################################################################
-from __future__ import division
+from __future__ import division, print_function
 
 import scipy.special
-from scipy.special import betaln, gammaln
+from scipy.special import betaln, gammaln, xlogy, xlog1py
 import math
 import numpy as np
 from numpy import exp, log, pi, inf
@@ -29,7 +29,7 @@ def ilogit(x):
         ret = math.exp(x)/(1+math.exp(x)) if x < 0 else 1/(1+math.exp(-x))
     else:
         ret = np.empty_like(x)
-        idx = (x<0)
+        idx = (x < 0)
         neg = x[idx]
         ret[idx] = exp(neg)/(1.0+exp(neg))
         ret[~idx] = 1.0/(1.0+exp(-x[~idx]))
@@ -172,7 +172,7 @@ class BugsContext:
 # ==== discrete univariate distributions ====
 def dbern_llf(x, p):
     """bernoulli(x;p); x = 0,1"""
-    return log( (1-p)*(x==0) + p*(x==1) )
+    return log((1-p)*(x == 0) + p*(x == 1))
 
 def dbin_llf(r, p, n):
     r"""
@@ -185,7 +185,7 @@ def dbin_llf(r, p, n):
         P(r; p, n) = \frac{n!}{r!(n-r)!} p^r (1-p)^{n-r}
 
     """
-    return binomln(n, r) + r*log(p) + (n-r)*log(1-p)
+    return binomln(n, r) + xlogy(r, p) + xlog1py(n-r, -p)
 
 def dcat_llf(x, p):
     """categorical(x;[p_{x=1},p_{x=2},...,p_{x=k}]); sum(p)=1"""
@@ -193,38 +193,39 @@ def dcat_llf(x, p):
 
 def dnegbin_llf(x, p, r):
     """negative binomial(x; p, r); x=0,1,2,..."""
-    return binomln(x+r-1, x) + r*log(p) + x*log(1-p)
+    return binomln(x+r-1, x) + xlogy(r, p) + xlog1py(x, -p)
 
 def dpois_llf(x, L):
     """poisson(x; lambda); x=0,1,2,..."""
-    if (L<0).any(): print "L",L[L<0]
-    return -L + x*log(L) - logfact(x)
+    if (L < 0).any():
+        print("L", L[L < 0])
+    return -L + xlogy(x, L) - logfact(x)
 
 def dgeom_llf(x, p):
     """geometric(x; p); x=1,2,3,..."""
-    return (x-1)*log(1-p) + log(p)
+    return xlog1py(x-1, -p) + log(p)
 
 def dgeom0_llf(x, p):
     """geometric(x; p); x = 0,1,2,..."""
-    return x*log(1-p) + log(p)
+    return xlogy(x, 1-p) + log(p)
 
 def dhypr_llf(x, n, m, N, psi):
     """non-central hypergeometric(x; n, m, N, psi); x in [max(0,m+n-N),min(n,m)]"""
     u0 = max(0, m-N+n)
-    u1 = min(n,m)
-    norm = sum(exp(binomln(n,u)+binomln(N-n,m-u)+u*log(psi))
-               for u in range(u0,u1+1))
-    binomln(n,x) + binomln(N-n,m-x) + x*log(psi) - log(norm)
+    u1 = min(n, m)
+    norm = sum(exp(binomln(n, u)+binomln(N-n, m-u)+xlogy(u, psi))
+               for u in range(u0, u1+1))
+    return binomln(n, x) + binomln(N-n, m-x) + xlogy(x, psi) - log(norm)
 
 # ==== continuous univariate distributions ====
 def dbeta_llf(x, alpha, beta):
     """beta(x; alpha, beta); x in (0,1)"""
     return gammaln(alpha+beta)-gammaln(alpha)-gammaln(beta) \
-           + (alpha-1)*log(x) + (beta-1)*log(1-x)
+           + xlogy(alpha-1, x) + xlog1py(beta-1, -x)
 
 def dchisqr_llf(x, k):
     """chi-squared(x; k); x in (0, inf)"""
-    return 0.5*(-k*log(2) + (k-2)*log(x) - x) - gammaln(0.5*k)
+    return 0.5*(-k*log(2) + xlogy(k-2, x) - x) - gammaln(0.5*k)
 
 def ddexp_llf(x, mu, tau):
     """double exponential(x; mu, tau); x in (-inf, inf)"""
@@ -241,11 +242,11 @@ def dflat_llf(x):
 def dgamma_llf(x, alpha, beta):
     """gamma(x; alpha=k, beta=1/theta); x in (0, inf)"""
     #VECTORIZE: if alpha <= 0 or beta <= 0: return -inf
-    return alpha*log(beta) + (alpha-1)*log(x) - beta*x - gammaln(alpha)
+    return xlogy(alpha, beta) + xlogy(alpha-1, x) - beta*x - gammaln(alpha)
 
 def dgpar_llf(x, mu, sigma, eta):
     """generalized pareto(x; mu, sigma, eta); x in [mu, sigma/eta - mu]"""
-    return -(1+1/eta) * log(1 + eta/sigma*(x-mu)) - log(sigma)
+    return xlogy(-(1+1/eta), 1 + eta/sigma*(x-mu)) - log(sigma)
 
 def dloglik_llf(x, p):
     """
@@ -297,7 +298,7 @@ def dnorm_llf(x, mu, tau):
 
 def dpar_llf(x, alpha, c):
     """pareto(x; alpha, c); x in (c, inf)"""
-    return log(alpha) + alpha*log(c) - (alpha+1) * log(x)
+    return log(alpha) + xlogy(alpha, c) - xlogy(alpha+1, x)
 
 def dt_llf(x, mu, tau, k):
     """Student-t(x; tau, k); x in (-inf, inf); k=1,2,3,..."""
@@ -307,11 +308,11 @@ def dt_llf(x, mu, tau, k):
 def dunif_llf(x, a, b):
     """uniform(x;a,b); x in (a, b)"""
     # x==x to force vector return value for vector inputs
-    return -log((x==x)*(b - a))
+    return -log((x == x)*(b - a))
 
 def dweib_llf(x, v, L):
     """weibull(x; v, lambda); x in (0, inf)"""
-    return log(v*L) + (v-1)*log(x) - L*x**v
+    return log(v*L) + xlogy(v-1, x) - L*x**v
 
 # ==== discrete multivariate distributions ====
 def dmulti_llf(x, p, n):
@@ -320,14 +321,14 @@ def dmulti_llf(x, p, n):
 
     Note: $x$ values for $p \leq 0$ are ignored.
     """
-    x,p = x[p>0], p[p>0]
-    return gammaln(n+1) - np.sum(gammaln(x+1)) + np.sum(x*log(p))
+    x, p = x[p > 0], p[p > 0]
+    return gammaln(n+1) - np.sum(gammaln(x+1)) + np.sum(xlogy(x, p))
 
 # ==== continuous multivariate distributions ====
 def ddirich_llf(x, alpha):
     """dirichlet([x1,...,xk]; [alpha1,...,alphak]); x_i in (0,1), sum(x) = 1"""
     # x,alpha are both of dimension n.
-    return -np.sum(gammaln(alpha)) + gammaln(sum(alpha)) + np.sum((alpha-1)*log(x))
+    return -np.sum(gammaln(alpha)) + gammaln(sum(alpha)) + np.sum(xlogy(alpha-1, x))
 
 def dmnorm_llf(x, mu, T):
     """multivariate normal([x1,...,xk]; mu, T); x_i in (-inf, inf); T = inv(Sigma)"""
@@ -343,7 +344,7 @@ def dmt_llf(x, mu, T, k):
 def dwish_llf(x, V, n):
     """wishart(x; V, n); X,V in p x p positive definite; n > p-1"""
     p = len(x)
-    tr = np.sum(np.diag(np.linalg.dot(np.linalg.inv(V),x)))
+    tr = np.sum(np.diag(np.dot(np.linalg.inv(V), x)))
     return (n-p-1)/2*logdet(x) - tr/2 - n*p/2*log(2) - n/2*logdet(V) \
-        - scipy.special.multigammaln(n/2,p)
+        - scipy.special.multigammaln(n/2, p)
 
