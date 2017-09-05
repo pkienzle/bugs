@@ -13,10 +13,6 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, round
 
-import warnings
-warnings.warn("The Asia model contains integer parameters, which have not yet been shown to work in Bumps")
-#raise NotImplementedError("No support for integer variables")
-
 # asia, dyspnoea
 # p.smoking[No/Yes]
 # p.tuberculosis[asia,No/Yes]
@@ -56,9 +52,17 @@ problem.derive_vars = post, post_vars
 problem.visible_vars = [
     "bronchitis", "either", "lung.cancer", "smoking", "tuberculosis", "xray",
     ]
-problem.integer_vars = [
+
+import warnings
+warnings.warn("The Asia model contains integer parameters, which have not yet been shown to work in Bumps")
+#raise NotImplementedError("No support for integer variables")
+integer_vars = [
     "bronchitis", "either", "lung.cancer", "smoking", "tuberculosis", "xray",
 ]
+# uncomment the following to treat integer variables as integers.  Need to
+# verify that the mean value is updated appropriately.  Make sure it is using
+# rounding since our bounds are [0.5, 2.5].
+#problem.integer_vars = integer_vars
 
 
 # From Asia.txt
