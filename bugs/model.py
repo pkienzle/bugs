@@ -59,7 +59,7 @@ inverse = {
     math.cos: math.acos,
     math.tan: math.atan,
     }
-inverse.update((v,k) for k,v in inverse.items())
+inverse.update(dict((v, k) for k, v in inverse.items()))
 
 def wrap(fn):
     @staticmethod
@@ -71,7 +71,7 @@ def wrap(fn):
 
 def wrap2(fn):
     @staticmethod
-    def wrapped(x,y):
+    def wrapped(x, y):
         return fn(x.value, y.value)
     #wrapped.__name__ = fn.__name__
     #wrapped.__doc__ = fn.__doc__
@@ -93,7 +93,7 @@ class BugsContext:
     cos = wrap(math.cos)
     cosh = wrap(math.cosh)
     exp = wrap(math.exp)
-    equals = wrap2(lambda x,y: 1 if x == y else 0)
+    equals = wrap2(lambda x, y: 1 if x == y else 0)
     gammap = wrap2(scipy.special.gammainc)
     ilogit = wrap(ilogit)
     iclogit = wrap(iclogit)
@@ -299,6 +299,14 @@ def dnorm_llf(x, mu, tau):
 def dpar_llf(x, alpha, c):
     """pareto(x; alpha, c); x in (c, inf)"""
     return log(alpha) + xlogy(alpha, c) - xlogy(alpha+1, x)
+
+def dstable_llf(x, alpha, beta, gamma, delta):
+    """stable(x; alpha, beta, gamma, delta)"""
+    try:
+        import levy
+    except ImportError:
+        raise ImportError("Requires pylevy package https://github.com/josemiotto/pylevy")
+    return log(levy.levy(x, alpha, beta, mu=gamma, sigma=delta, par=1))
 
 def dt_llf(x, mu, tau, k):
     """Student-t(x; tau, k); x in (-inf, inf); k=1,2,3,..."""
