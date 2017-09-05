@@ -1,7 +1,7 @@
 ##############################################################################
 # Distribution log likelihood functions
 ##############################################################################
-from __future__ import division
+from __future__ import division, print_function
 
 import scipy.special
 from scipy.special import betaln, gammaln
@@ -59,7 +59,7 @@ inverse = {
     math.cos: math.acos,
     math.tan: math.atan,
     }
-inverse.update((v,k) for k,v in inverse.items())
+inverse.update(dict((v,k) for k,v in inverse.items()))
 
 def wrap(fn):
     @staticmethod
@@ -197,7 +197,8 @@ def dnegbin_llf(x, p, r):
 
 def dpois_llf(x, L):
     """poisson(x; lambda); x=0,1,2,..."""
-    if (L<0).any(): print "L",L[L<0]
+    if (L<0).any(): 
+        print("L",L[L<0])
     return -L + x*log(L) - logfact(x)
 
 def dgeom_llf(x, p):
@@ -298,6 +299,14 @@ def dnorm_llf(x, mu, tau):
 def dpar_llf(x, alpha, c):
     """pareto(x; alpha, c); x in (c, inf)"""
     return log(alpha) + alpha*log(c) - (alpha+1) * log(x)
+
+def dstable_llf(x, alpha, beta, gamma, delta):
+    """stable(x; alpha, beta, gamma, delta)"""
+    try:
+        import levy
+    except ImportError:
+        raise ImportError("Requires pylevy package https://github.com/josemiotto/pylevy")
+    return log(levy.levy(x, alpha, beta, mu=gamma, sigma=delta, par=1))
 
 def dt_llf(x, mu, tau, k):
     """Student-t(x; tau, k); x in (-inf, inf); k=1,2,3,..."""
