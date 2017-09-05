@@ -305,7 +305,7 @@ def dstable_llf(x, alpha, beta, gamma, delta):
     try:
         import levy
     except ImportError:
-        raise ImportError("Requires pylevy package https://github.com/josemiotto/pylevy")
+        raise ImportError("Requires pylevy package https://github.com/pkienzle/pylevy")
     return log(levy.levy(x, alpha, beta, mu=gamma, sigma=delta, par=1))
 
 def dt_llf(x, mu, tau, k):

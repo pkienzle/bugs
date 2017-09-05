@@ -1,15 +1,15 @@
 # model
 # {
 #	for(i in 2 : N){
-#		z[i] ~ dstable(alpha, beta, gamma, delta)	
+#		z[i] ~ dstable(alpha, beta, gamma, delta)
 #		z[i] <- price[i] / price[i - 1] - 1
 #	}
-#	
+#
 #	alpha ~ dunif(1.1, 2)
 #	beta ~ dunif(-1, 1)
 #	gamma ~ dunif(-0.05, 0.05)
 #	delta ~ dunif(0.001, 0.5)
-#	
+#
 #	mean.z <- mean(z[2:50])
 #	sd.z <- sd(z[2:50])
 #}
@@ -19,8 +19,8 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dstable_llf
 
-N = 50 
-price = np.array([ 
+N = 50
+price = np.array([
     296, 296, 300, 302, 300, 304, 303, 299, 293, 294, 294, 293, 295,
     287, 288, 297, 305, 307, 307, 304, 303, 304, 304, 309, 309, 309,
     307, 306, 304, 300, 296, 301, 298, 295, 295, 293, 292, 297, 294,
@@ -59,4 +59,3 @@ if __name__ == "__main__":
 # beta	-0.5499   0.3628    0.01235  -0.9743   -0.65     0.3909	    1001   20000
 # delta	 0.008204 0.00158   6.989E-5  0.005828  0.007991 0.0121     1001   20000
 # gamma	 7.936E-4 0.002908  1.506E-4 -0.003841  1.917E-4 0.007961   1001   20000
-	
