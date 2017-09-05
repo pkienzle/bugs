@@ -1,6 +1,15 @@
-##############################################################################
-# Distribution log likelihood functions
-##############################################################################
+"""
+OpenBUGS library
+----------------
+
+Reimplementation of the functions and distributions provided in OpenBUGS
+so that bugs models can be translated into python negative log likelihood
+functions.
+
+See the following for details:
+
+    http://openbugs.net/Manuals/ModelSpecification.html
+"""
 from __future__ import division, print_function
 
 import scipy.special
