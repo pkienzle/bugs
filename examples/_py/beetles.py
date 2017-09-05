@@ -43,7 +43,7 @@ def beetles(pars):
 
 def post(pars):
     alpha_star, beta = pars
-    alpha = alpha_star - beta*np.mean(x)
+    alpha = alpha_star - beta*np.mean(x, axis=0)
     p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
     rhat = n[:, None]*p
     return np.vstack([alpha[None, :], beta[None, :], rhat])
