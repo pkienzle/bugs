@@ -59,6 +59,7 @@ post_vars = MEDIAN + ["veh.control", "test.sub", "pos.control"]
 dof = 100
 problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
+problem._bounds[0,M] = 0  # r >= 0
 problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = MEDIAN + ["pos.control", "r", "test.sub", "veh.control"]

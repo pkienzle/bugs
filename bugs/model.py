@@ -261,6 +261,7 @@ class BugsContext:
 
 # TODO: support censored distributions other than weibull
 # TODO: support truncated distributions
+# TODO: test parameter ranges in distributions to avoid numpy warnings
 
 # ==== discrete univariate distributions ====
 def dbern_llf(x, p):
