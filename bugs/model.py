@@ -1,14 +1,95 @@
-"""
+r"""
 OpenBUGS library
-----------------
+================
 
 Reimplementation of the functions and distributions provided in OpenBUGS
 so that bugs models can be translated into python negative log likelihood
 functions.
 
-See the following for details:
+See the OpenBugs manual for details:
 
     http://openbugs.net/Manuals/ModelSpecification.html
+
+Censored distributions
+----------------------
+
+Note on censored data, such as *xd ~ dweib(v, L)C(xl, xr)*
+
+Censoring is only in effect if xd is nan.  For weibull, this corresponds
+to no failure being observed. Otherwise, xd is the observed failure time
+which is follows the Weibull log likelihood function.  Implementing
+generalized censoring will require significant effort, requiring the
+cdf of each distribution that is censored.
+
+Given distribution with::
+
+    probability density function pdf $f(x)$
+    cumulative density function cdf $F(x) = \int_{-\infty}^x f(v)\, dv$
+    survival function $S(x) = 1-F(x)$
+    hazard function $\lambda(x) = f(x)/S(x)$, so $f(x) = \lambda(x)S(x)$
+
+then censored log likelihood data from an experiment with::
+
+    observed failures $d$ having a measured lifetime $x_d$
+    surviving samples $r$ not observed to fail within measured time $x_r$
+
+has the form:
+
+.. math:
+
+    \log(L) = \sum_d \log(f(x_d)) + \sum_r \log(S(x_r))
+
+Generalizing to measurements where failures happen before observation or
+between observerations::
+
+    unobserved failures $l$ having lifetime less than $x_l$
+    unobserved failures $i$ having lifetime in $[x_l,x_r]$
+
+this becomes:
+
+.. math:
+
+    \log(L) = \sum_d \log(f(x_d)) + \sum_r \log(S(x_r))
+        + \sum_l \log(1 -S(x_r)) + \sum_i \log(S(x_l) - S(x_r))
+
+The weibull distribution has a convenient definition with closed
+form expressions for hazard and survival:
+
+.. math::
+
+    \lambda(x) = v \lambda x^{v-1}
+    S(x) = \exp(-\lambda x^v)
+    f(x) = \lambda(x) S(x)
+
+Trucated distributions
+----------------------
+
+Note on trucated data, such as x ~ dnorm(mu, tau)T(0,)
+
+Truncated distributions can be simply formed by correcting llf with
+-log(F(xl)) if left truncated, -log(S(xr)) if right truncated or
+-log(F(xl) + S(xr)) if truncated to an interval.  If the truncation
+region is fixed then this will not affect the MCMC.  If however the
+trunctation region is a fitted parameter, then the correct truncation
+normalization factor will need to be applied to the distribution.
+
+References
+----------
+
+OpenBugs (2014). Computer Software. http://www.openbugs.net/
+
+Gelfand, A. E. and Smith, A. F. M. (1990)
+*Sampling-based approaches to calculating marginal densities*,
+Journal of the American Statistical Association 85: 398--409
+
+Lunn, D., Spiegelhalter, D., Thomas, A. and Best, N. (2009)
+The BUGS project: Evolution, critique and future directions (with discussion),
+Statistics in Medicine 28: 3049--3082.
+
+Zhang, D. (2005) Likelihood and Censored (or Truncated) Survival Data
+Lecture notes for Analysis of Survival Data (ST745), Spring 2005, 3
+http://www4.stat.ncsu.edu/%7Edzhang2/st745/chap3.pdf
+
 """
 from __future__ import division, print_function
 
@@ -178,6 +259,9 @@ class BugsContext:
     # ranked(v, k)
     #     kth smallest component of v
 
+# TODO: support censored distributions other than weibull
+# TODO: support truncated distributions
+
 # ==== discrete univariate distributions ====
 def dbern_llf(x, p):
     """bernoulli(x;p); x = 0,1"""
@@ -330,6 +414,39 @@ def dunif_llf(x, a, b):
 def dweib_llf(x, v, L):
     """weibull(x; v, lambda); x in (0, inf)"""
     return log(v*L) + xlogy(v-1, x) - L*x**v
+
+def dweib_C_llf(x, v, L, lower=None, upper=None):
+    """censored weibull(x; v, lambda); x in (0, inf)"""
+    # normalize the data
+    x, v, L = np.broadcast_arrays(x, v, L)
+
+    # preallocate space for the result
+    llf = np.empty(x.shape)
+
+    # uncensored data
+    index = np.isfinite(x)
+    xp, vp, Lp = x[index], v[index], L[index]
+    llf[index] = log(vp*Lp) + xlogy(vp-1, xp) - Lp*xp**vp
+
+    # censored data
+    index = ~index
+    if upper is None: # right censored has an accurate form
+        lower = np.broadcast_to(lower, x.shape)
+        xp, vp, Lp = lower[index], v[index], L[index]
+        llf[index] = -Lp*xp**vp
+    else: # left censored is equivalent to interval censored with lower=0
+        if lower is None:
+            lower = 0
+        lower = np.broadcast_to(lower, x.shape)
+        upper = np.broadcast_to(upper, x.shape)
+        # minimize underflow risk by normalizing to start time zero:
+        #     log [ e^(-Lx_l^v) - e^(-Lx_r^v) ]
+        #     = log [ e(-Lx_l^v) (1 - e^(-Lx_r^v)/e^(-Lx_l^v))]
+        #     = -Lx_l^v + log[1 - e^-L(x_r^v-x_l^v)]
+        xpl, xpu, vp, Lp = lower[index], upper[index], v[index], L[index]
+        llf[index] = log1p(-exp(-Lp*(xpu**vp - xpl**vp))) - L*xpl**vp
+    return llf
+
 
 # ==== discrete multivariate distributions ====
 def dmulti_llf(x, p, n):
