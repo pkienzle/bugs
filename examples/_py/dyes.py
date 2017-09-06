@@ -34,7 +34,7 @@ def dyes(p):
 
     cost = 0
     cost += np.sum(dnorm_llf(mu, theta, tau_btw))
-    cost += np.sum(dnorm_llf(y, mu[:,None], tau_with))
+    cost += np.sum(dnorm_llf(y, mu[:, None], tau_with))
     cost += dgamma_llf(tau_with, 0.001, 0.001)
     cost += dgamma_llf(tau_btw, 0.001, 0.001)
     cost += dnorm_llf(theta, 0, 1e-6)
