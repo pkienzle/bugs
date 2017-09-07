@@ -1,13 +1,19 @@
-# model
-# {
-#     smoking ~ dcat(p.smoking[1:2])
-#     tuberculosis ~ dcat(p.tuberculosis[asia,1:2])
-#     lung.cancer ~ dcat(p.lung.cancer[smoking,1:2])
-#     bronchitis ~ dcat(p.bronchitis[smoking,1:2])
-#     either <- max(tuberculosis,lung.cancer)
-#     xray ~ dcat(p.xray[either,1:2])
-#     dyspnoea ~ dcat(p.dyspnoea[either,bronchitis,1:2])
-# }
+"""
+Asia: expert system
+
+::
+
+    model
+    {
+        smoking ~ dcat(p.smoking[1:2])
+        tuberculosis ~ dcat(p.tuberculosis[asia,1:2])
+        lung.cancer ~ dcat(p.lung.cancer[smoking,1:2])
+        bronchitis ~ dcat(p.bronchitis[smoking,1:2])
+        either <- max(tuberculosis,lung.cancer)
+        xray ~ dcat(p.xray[either,1:2])
+        dyspnoea ~ dcat(p.dyspnoea[either,bronchitis,1:2])
+    }
+"""
 
 from bumps.names import *
 from bugs.parse import load, define_pars
@@ -65,11 +71,12 @@ integer_vars = [
 #problem.integer_vars = integer_vars
 
 
-# From Asia.txt
-#               mean	sd	median	2.5pc	97.5pc
-#bronchitis     1.815	0.3881	2	1	2
-#either         1.181	0.3847	1	1	2
-#lung.cancer    1.1	0.2995	1	1	2
-#smoking        1.626	0.4839	2	1	2
-#tuberculosis   1.086	0.2798	1	1	2
-#xray           1.218	0.4129	1	1	2
+openbugs_result = """
+               mean    sd     median  2.5pc 97.5pc
+bronchitis     1.815   0.3881    2     1     2
+either         1.181   0.3847    1     1     2
+lung.cancer    1.1     0.2995    1     1     2
+smoking        1.626   0.4839    2     1     2
+tuberculosis   1.086   0.2798    1     1     2
+xray           1.218   0.4129    1     1     2
+"""

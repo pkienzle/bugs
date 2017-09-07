@@ -1,18 +1,24 @@
-#model
-#{
-#	for( i in 1 : Num ) {
-#		rc[i] ~ dbin(pc[i], nc[i])
-#		rt[i] ~ dbin(pt[i], nt[i])
-#		logit(pc[i]) <- mu[i]
-#		logit(pt[i]) <- mu[i] + delta[i]
-#		mu[i] ~ dnorm(0.0,1.0E-5)
-#		delta[i] ~ dt(d, tau, 4)
-#	}
-#	d ~ dnorm(0.0,1.0E-6)
-#	tau ~ dgamma(0.001,0.001)
-#	delta.new ~ dt(d, tau, 4)
-#	sigma <- 1 / sqrt(tau)
-#}
+"""
+Blocker: random effects meta-analysis of clinical trials
+
+::
+
+    model
+    {
+        for( i in 1 : Num ) {
+            rc[i] ~ dbin(pc[i], nc[i])
+            rt[i] ~ dbin(pt[i], nt[i])
+            logit(pc[i]) <- mu[i]
+            logit(pt[i]) <- mu[i] + delta[i]
+            mu[i] ~ dnorm(0.0,1.0E-5)
+            delta[i] ~ dt(d, tau, 4)
+        }
+        d ~ dnorm(0.0,1.0E-6)
+        tau ~ dgamma(0.001,0.001)
+        delta.new ~ dt(d, tau, 4)
+        sigma <- 1 / sqrt(tau)
+    }
+"""
 
 from bumps.names import *
 from bugs.parse import load, define_pars
@@ -58,7 +64,9 @@ problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = ["d", "delta.new", "sigma"]
 
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#d	-0.2536	0.06164	0.002288	-0.3718	-0.2545	-0.1266	1001	10000
-#delta.new	-0.2536	0.1417	0.00249	-0.5384	-0.2571	0.04796	1001	10000
-#sigma	0.1114	0.06381	0.003067	0.02749	0.09871	0.2634	1001	10000
+openbugs_result = """
+          mean     sd       MC_error  2.5pc    median    97.5pc   start sample
+d         -0.2536  0.06164  0.002288  -0.3718  -0.2545   -0.1266  1001  10000
+delta.new -0.2536  0.1417   0.00249   -0.5384  -0.2571    0.04796 1001  10000
+sigma      0.1114  0.06381  0.003067   0.02749  0.09871   0.2634  1001  10000
+"""

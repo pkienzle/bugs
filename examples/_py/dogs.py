@@ -1,13 +1,19 @@
-#model
-#{
-#	for (i in 1 : N) {
-#		theta[i] ~ dgamma(alpha, beta)
-#		lambda[i] <- theta[i] * t[i]
-#		x[i] ~ dpois(lambda[i])
-#	}
-#	alpha ~ dexp(1)
-#	beta ~ dgamma(0.1, 1.0)
-#}
+"""
+Dogs: loglinear model for binary data
+
+::
+
+    model
+    {
+        for (i in 1 : N) {
+            theta[i] ~ dgamma(alpha, beta)
+            lambda[i] <- theta[i] * t[i]
+            x[i] ~ dpois(lambda[i])
+        }
+        alpha ~ dexp(1)
+        beta ~ dgamma(0.1, 1.0)
+    }
+"""
 
 from bumps.names import *
 from bugs.parse import load, define_pars
@@ -62,8 +68,10 @@ problem.setp(p0)
 problem.derive_vars = post, post_vars
 
 
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#A	0.7827	0.01805	7.102E-4	0.7463	0.7832	0.8169	1001	10000
-#B	0.9248	0.01051	3.419E-4	0.9029	0.9249	0.945	1001	10000
-#alpha	-0.2452	0.02308	9.094E-4	-0.2926	-0.2444	-0.2023	1001	10000
-#beta	-0.07829	0.01138	3.701E-4	-0.1021	-0.07802	-0.05661	1001	10000
+openbugs_result = """
+       mean    sd       MC_error  2.5pc    median    97.5pc    start sample
+A      0.7827  0.01805  7.102E-4   0.7463   0.7832    0.8169   1001  10000
+B      0.9248  0.01051  3.419E-4   0.9029   0.9249    0.945    1001  10000
+alpha -0.2452  0.02308  9.094E-4  -0.2926  -0.2444   -0.2023   1001  10000
+beta  -0.07829 0.01138  3.701E-4  -0.1021  -0.07802  -0.05661  1001  10000
+"""

@@ -1,18 +1,25 @@
-# model
-# {
-#	for(i in 2 : N){
-#		z[i] ~ dstable(alpha, beta, gamma, delta)
-#		z[i] <- price[i] / price[i - 1] - 1
-#	}
-#
-#	alpha ~ dunif(1.1, 2)
-#	beta ~ dunif(-1, 1)
-#	gamma ~ dunif(-0.05, 0.05)
-#	delta ~ dunif(0.001, 0.5)
-#
-#	mean.z <- mean(z[2:50])
-#	sd.z <- sd(z[2:50])
-#}
+"""
+Abbey National: A stable distribution
+
+::
+
+    model
+    {
+        for(i in 2 : N){
+            z[i] ~ dstable(alpha, beta, gamma, delta)
+            z[i] <- price[i] / price[i - 1] - 1
+        }
+
+        alpha ~ dunif(1.1, 2)
+        beta ~ dunif(-1, 1)
+        gamma ~ dunif(-0.05, 0.05)
+        delta ~ dunif(0.001, 0.5)
+
+        mean.z <- mean(z[2:50])
+        sd.z <- sd(z[2:50])
+    }
+"""
+
 from __future__ import division
 
 from bumps.names import *
@@ -53,9 +60,10 @@ if __name__ == "__main__":
     plt.plot(t, levy.levy(t, 1.52569, 0.725142, -0.00315616, 0.00680555))
     plt.show()
 
-#
-#        mean     sd        MC_error  val2.5pc  median   val97.5pc  start  sample
-# alpha	 1.558    0.1995    0.008487  1.17      1.56     1.923      1001   20000
-# beta	-0.5499   0.3628    0.01235  -0.9743   -0.65     0.3909	    1001   20000
-# delta	 0.008204 0.00158   6.989E-5  0.005828  0.007991 0.0121     1001   20000
-# gamma	 7.936E-4 0.002908  1.506E-4 -0.003841  1.917E-4 0.007961   1001   20000
+openbugs_result = """
+        mean      sd        MC_error  2.5pc     median    97.5pc   start sample
+alpha    1.558    0.1995    0.008487   1.17      1.56     1.923    1001  20000
+beta    -0.5499   0.3628    0.01235   -0.9743   -0.65     0.3909   1001  20000
+delta    0.008204 0.00158   6.989E-5   0.005828  0.007991 0.0121   1001  20000
+gamma    7.936E-4 0.002908  1.506E-4  -0.003841  1.917E-4 0.007961 1001  20000
+"""

@@ -1,23 +1,29 @@
-#model
-#{
-#	for( k in 1 : P ) {
-#		for( i in 1 : N ) {
-#			Y[i , k] ~ dnorm(m[i , k], tau1)
-#			m[i , k] <- mu + sign[T[i , k]] * phi / 2 + sign[k] * pi / 2 + delta[i]
-#			T[i , k] <- group[i] * (k - 1.5) + 1.5
-#		}
-#	}
-#	for( i in 1 : N ) {
-#		delta[i] ~ dnorm(0.0, tau2)
-#	}
-#	tau1 ~ dgamma(0.001, 0.001) sigma1 <- 1 / sqrt(tau1)
-#	tau2 ~ dgamma(0.001, 0.001) sigma2 <- 1 / sqrt(tau2)
-#	mu ~ dnorm(0.0, 1.0E-6)
-#	phi ~ dnorm(0.0, 1.0E-6)
-#	pi ~ dnorm(0.0, 1.0E-6)
-#	theta <- exp(phi)
-#	equiv <- step(theta - 0.8) - step(theta - 1.2)
-#}
+"""
+Equiv: bioequivalence in a cross-over trial
+
+::
+
+    model
+    {
+        for( k in 1 : P ) {
+            for( i in 1 : N ) {
+                Y[i , k] ~ dnorm(m[i , k], tau1)
+                m[i , k] <- mu + sign[T[i , k]] * phi / 2 + sign[k] * pi / 2 + delta[i]
+                T[i , k] <- group[i] * (k - 1.5) + 1.5
+            }
+        }
+        for( i in 1 : N ) {
+            delta[i] ~ dnorm(0.0, tau2)
+        }
+        tau1 ~ dgamma(0.001, 0.001) sigma1 <- 1 / sqrt(tau1)
+        tau2 ~ dgamma(0.001, 0.001) sigma2 <- 1 / sqrt(tau2)
+        mu ~ dnorm(0.0, 1.0E-6)
+        phi ~ dnorm(0.0, 1.0E-6)
+        pi ~ dnorm(0.0, 1.0E-6)
+        theta <- exp(phi)
+        equiv <- step(theta - 0.8) - step(theta - 1.2)
+    }
+"""
 
 from bumps.names import *
 from numpy import exp, sqrt
@@ -77,12 +83,13 @@ problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = ["equiv", "mu", "phi", "pi", "sigma1", "sigma2", "theta"]
 
-
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#equiv	0.998	0.04468	4.161E-4	1.0	1.0	1.0	1001	10000
-#mu	1.436	0.05751	0.001952	1.323	1.436	1.551	1001	10000
-#phi	-0.008613	0.05187	4.756E-4	-0.1132	-0.00806	0.09419	1001	10000
-#pi	-0.18	0.05187	5.131E-4	-0.2841	-0.1801	-0.07464	1001	10000
-#sigma1	0.1102	0.03268	9.532E-4	0.06501	0.1035	0.1915	1001	10000
-#sigma2	0.1412	0.05366	0.00141	0.04701	0.1359	0.2666	1001	10000
-#theta	0.9928	0.05145	4.74E-4	0.893	0.992	1.099	1001	10000
+openbugs_result = """
+        mean     sd        MC_error  2.5pc     median   97.5pc   start   sample
+equiv   0.998    0.04468   4.161E-4   1.0       1.0      1.0      1001   10000
+mu      1.436    0.05751   0.001952   1.323     1.436    1.551    1001   10000
+phi    -0.008613 0.05187   4.756E-4  -0.1132   -0.00806  0.09419  1001   10000
+pi     -0.18     0.05187   5.131E-4  -0.2841   -0.1801  -0.07464  1001   10000
+sigma1  0.1102   0.03268   9.532E-4   0.06501   0.1035   0.1915   1001   10000
+sigma2  0.1412   0.05366   0.00141    0.04701   0.1359   0.2666   1001   10000
+theta   0.9928   0.05145   4.74E-4    0.893     0.992    1.099    1001   10000
+"""
