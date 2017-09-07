@@ -1,20 +1,26 @@
-#model
-#{
-#	for (i in 1 : K) {
-#		r0[i]  ~ dbin(p0[i], n0[i])
-#		r1[i] ~ dbin(p1[i], n1[i])
-#		logit(p0[i]) <- mu[i]
-#		logit(p1[i]) <- mu[i] + logPsi[i]
-#		logPsi[i]    <- alpha + beta1 * year[i] + beta2 * (year[i] * year[i] - 22) + b[i]
-#		b[i] ~ dnorm(0, tau)
-#		mu[i]  ~ dnorm(0.0, 1.0E-6)
-#	}
-#	alpha  ~ dnorm(0.0, 1.0E-6)
-#	beta1  ~ dnorm(0.0, 1.0E-6)
-#	beta2  ~ dnorm(0.0, 1.0E-6)
-#	tau    ~ dgamma(1.0E-3, 1.0E-3)
-#	sigma <- 1 / sqrt(tau)
-#}
+"""
+Oxford: smooth fit to log-odds ratios
+
+::
+
+    model
+    {
+        for (i in 1 : K) {
+            r0[i]  ~ dbin(p0[i], n0[i])
+            r1[i] ~ dbin(p1[i], n1[i])
+            logit(p0[i]) <- mu[i]
+            logit(p1[i]) <- mu[i] + logPsi[i]
+            logPsi[i]    <- alpha + beta1 * year[i] + beta2 * (year[i] * year[i] - 22) + b[i]
+            b[i] ~ dnorm(0, tau)
+            mu[i]  ~ dnorm(0.0, 1.0E-6)
+        }j
+        alpha  ~ dnorm(0.0, 1.0E-6)
+        beta1  ~ dnorm(0.0, 1.0E-6)
+        beta2  ~ dnorm(0.0, 1.0E-6)
+        tau    ~ dgamma(1.0E-3, 1.0E-3)
+        sigma <- 1 / sqrt(tau)
+    }
+"""
 
 from bumps.names import *
 from numpy import exp, sqrt
@@ -68,8 +74,10 @@ problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = ["alpha", "beta1", "beta2", "sigma"]
 
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#alpha	0.5817	0.06228	0.001469	0.459	0.5813	0.7053	2001	10000
-#beta1	-0.04654	0.01526	4.205E-4	-0.07656	-0.04668	-0.01708	2001	10000
-#beta2	0.007115	0.003034	7.765E-5	0.0013	0.007114	0.0131	2001	10000
-#sigma	0.1078	0.06774	0.005011	0.02571	0.08953	0.2693	2001	10000
+openbugs_result = """
+       mean     sd       MC_error  2.5pc    median    97.5pc    start  sample
+alpha  0.5817   0.06228  0.001469   0.459    0.5813    0.7053   2001   10000
+beta1 -0.04654  0.01526  4.205E-4  -0.07656 -0.04668  -0.01708  2001   10000
+beta2  0.007115 0.003034 7.765E-5   0.0013   0.007114  0.0131   2001   10000
+sigma  0.1078   0.06774  0.005011   0.02571  0.08953   0.2693   2001   10000
+"""

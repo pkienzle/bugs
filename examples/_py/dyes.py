@@ -1,17 +1,23 @@
-#model
-#{
-#	for(i in 1 : batches) {
-#		mu[i] ~ dnorm(theta, tau.btw)
-#		for(j in 1 : samples) {
-#			y[i , j] ~ dnorm(mu[i], tau.with)
-#		}
-#	}
-#	sigma2.with <- 1 / tau.with
-#	sigma2.btw <- 1 / tau.btw
-#	tau.with ~ dgamma(0.001, 0.001)
-#	tau.btw ~ dgamma(0.001, 0.001)
-#	theta ~ dnorm(0.0, 1.0E-10)
-#}
+"""
+Dyes: variance components model
+
+::
+
+    model
+    {
+        for(i in 1 : batches) {
+            mu[i] ~ dnorm(theta, tau.btw)
+            for(j in 1 : samples) {
+                y[i , j] ~ dnorm(mu[i], tau.with)
+            }
+        }
+        sigma2.with <- 1 / tau.with
+        sigma2.btw <- 1 / tau.btw
+        tau.with ~ dgamma(0.001, 0.001)
+        tau.btw ~ dgamma(0.001, 0.001)
+        theta ~ dnorm(0.0, 1.0E-10)
+    }
+"""
 
 from bumps.names import *
 from numpy import exp, sqrt
@@ -57,7 +63,9 @@ problem.derive_vars = post, post_vars
 problem.visible_vars = ["sigma2.btw", "sigma2.with", "theta"]
 
 
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#sigma2.btw	2252.0	3974.0	39.33	0.00895	1341.0	10250.0	1001	100000
-#sigma2.with	3009.0	1100.0	18.96	1550.0	2777.0	5745.0	1001	100000
-#theta	1527.0	21.73	0.171	1484.0	1527.0	1571.0	1001	100000
+openbugs_result = """
+            mean    sd      MC_error 2.5pc     median    97.5pc    start  sample
+sigma2.btw  2252.0  3974.0  39.33    0.00895   1341.0    10250.0   1001   100000
+sigma2.with 3009.0  1100.0  18.96    1550.0    2777.0     5745.0   1001   100000
+theta       1527.0    21.73  0.171   1484.0    1527.0     1571.0   1001   100000
+"""

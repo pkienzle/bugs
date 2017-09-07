@@ -1,20 +1,27 @@
-#model {
-## prior distributions
-#	psi~dunif(0,1)
-#	mu~dnorm(0,0.001)
-#	tau~dgamma(.001,.001) # zero-inflated binomial mixture model for
-#	                                          # the augmented data
-#	for(i in 1: nind + nz){
-#		z[i] ~ dbin(psi,1)
-#		eta[i]~ dnorm(mu, tau)
-#		logit(p[i])<- eta[i]
-#		muy[i]<-p[i] * z[i]
-#		y[i] ~ dbin(muy[i], J)
-#	}
-#	# Derived parameters
-#	N<-sum(z[1 : nind+nz])
-#	sigma<-sqrt(1  /tau)
-#}
+"""
+Birds: species richness,estimating the size of a Closed "Population" 
+with individual heterogeneity in detection probability 
+
+::
+
+    model {
+    # prior distributions
+        psi~dunif(0,1)
+        mu~dnorm(0,0.001)
+        tau~dgamma(.001,.001) # zero-inflated binomial mixture model for
+                                                # the augmented data
+        for(i in 1: nind + nz){
+            z[i] ~ dbin(psi,1)
+            eta[i]~ dnorm(mu, tau)
+            logit(p[i])<- eta[i]
+            muy[i]<-p[i] * z[i]
+            y[i] ~ dbin(muy[i], J)
+        }
+        # Derived parameters
+        N<-sum(z[1 : nind+nz])
+        sigma<-sqrt(1  /tau)
+    }
+"""
 
 from bumps.names import *
 from bugs.parse import load, define_pars
@@ -64,9 +71,10 @@ problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = ["N", "mu", "psi", "sigma"]
 
-
-#	mean	sd	MC_error	val2.5pc	median	val97.5pc	start	sample
-#N	89.85	12.85	0.7614	76.0	87.0	122.0	1001	20000
-#mu	-2.692	0.4506	0.02712	-3.78	-2.606	-2.064	1001	20000
-#psi	0.2815	0.04708	0.002392	0.2124	0.2744	0.3909	1001	20000
-#sigma	1.668	0.3017	0.01815	1.226	1.614	2.361	1001	20000
+openbugs_result = """
+      mean    sd       MC_error  2.5pc   median  97.5pc    start  sample
+N     89.85   12.85    0.7614    76.0    87.0    122.0     1001   20000
+mu    -2.692   0.4506  0.02712   -3.78   -2.606   -2.064   1001   20000
+psi    0.2815  0.04708 0.002392   0.2124  0.2744   0.3909  1001   20000
+sigma  1.668   0.3017  0.01815    1.226   1.614    2.361   1001   20000
+"""

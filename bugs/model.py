@@ -292,9 +292,16 @@ def dnegbin_llf(x, p, r):
 
 def dpois_llf(x, L):
     """poisson(x; lambda); x=0,1,2,..."""
-    if (L < 0).any():
-        print("L", L[L < 0])
-    return -L + xlogy(x, L) - logfact(x)
+    x, L = np.broadcast_arrays(x, L)
+    index = L >= 0
+    if index.all():
+        llf = -L + xlogy(x, L) - logfact(x)
+    else:
+        #print("L", L[L < 0])
+        llf = np.empty(x.shape)
+        llf[index] = -L[index] + xlogy(x[index], L[index]) - logfact(x[index])
+        llf[~index] = -inf
+    return llf
 
 def dgeom_llf(x, p):
     """geometric(x; p); x=1,2,3,..."""
