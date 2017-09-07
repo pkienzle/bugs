@@ -343,8 +343,20 @@ def dflat_llf(x):
 
 def dgamma_llf(x, alpha, beta):
     """gamma(x; alpha=k, beta=1/theta); x in (0, inf)"""
-    #VECTORIZE: if alpha <= 0 or beta <= 0: return -inf
-    return xlogy(alpha, beta) + xlogy(alpha-1, x) - beta*x - gammaln(alpha)
+    return alpha * log(beta) + xlogy(alpha-1, x) - beta*x - gammaln(alpha)
+    ## range protections if we want them (3x slower)
+    #try:
+    #    with np.errstate(all='raise'):
+    #        return alpha * log(beta) + xlogy(alpha-1, x) - beta*x - gammaln(alpha)
+    #except Exception:
+    #    x, alpha, beta = np.broadcast_arrays(x, alpha, beta)
+    #    index = (x <= 0) | (alpha <= 0) | (beta <= 0)
+    #    llf = np.empty(x.shape)
+    #    llf[index] = -inf
+    #    index = ~index
+    #    alpha, beta, x = alpha[index], beta[index], x[index]
+    #    llf[index] = alpha * log(beta) + xlogy(alpha-1, x) - beta*x - gammaln(alpha)
+    #    return llf
 
 def dgpar_llf(x, mu, sigma, eta):
     """generalized pareto(x; mu, sigma, eta); x in [mu, sigma/eta - mu]"""
@@ -395,8 +407,20 @@ def dlogis_llf(x, mu, tau):
 
 def dnorm_llf(x, mu, tau):
     """normal(x; mu, tau=1/sigma**2)"""
-    #VECTORIZE: if tau <= 0: return 0 if tau == 0 and mu == x else -inf
     return LOG_1_ROOT_2PI + 0.5*log(tau) - 0.5*(x-mu)**2*tau
+    ## range protections, if we want them (3x slower)
+    #try:
+    #    with np.errstate(all='raise'):
+    #        return LOG_1_ROOT_2PI + 0.5*log(tau) - 0.5*(x-mu)**2*tau
+    #except Exception:
+    #    x, mu, tau = np.broadcast_arrays(x, mu, tau)
+    #    index = tau <= 0
+    #    llf = np.empty(x.shape)
+    #    llf[index] = -inf
+    #    index = ~index
+    #    x, mu, tau = x[index], mu[index], tau[index]
+    #    llf[index] = LOG_1_ROOT_2PI + 0.5*log(tau) - 0.5*(x-mu)**2*tau
+    #    return llf
 
 def dpar_llf(x, alpha, c):
     """pareto(x; alpha, c); x in (c, inf)"""
