@@ -97,7 +97,7 @@ import scipy.special
 from scipy.special import betaln, gammaln, xlogy, xlog1py
 import math
 import numpy as np
-from numpy import exp, log, pi, inf
+from numpy import exp, log, pi, inf, nan
 LOG_1_ROOT_2PI = -0.5*log(2*pi)
 ROOT_2 = math.sqrt(2)
 
@@ -108,7 +108,8 @@ def binomln(n, k):
 def logfact(k):
     return gammaln(k+1)
 def logdet(A):
-    return log(np.linalg.det(A))
+    sign, logdet = np.linalg.slogdet(A)
+    return logdet if sign >= 0 else nan
 def logit(x):
     return log(x/(1-x))
 def cloglog(x):
@@ -214,6 +215,7 @@ class BugsContext:
     sd = wrapv(np.std)
     sort = wrapv(sort)
     sum = wrapv(np.sum)
+    logdet = wrapv(logdet)
 
     # dist functions require s1, s2 be distribution objects with cdf, llf, and value
     @staticmethod
@@ -254,8 +256,6 @@ class BugsContext:
     #     s in [low, high] such that F(s) = 0, where sign(F(low)) != sign(F(high))
     # ode(x_0, grid, D(C,t), t_0, tolerance)
     #     solve D over grid starting with x_0 at time t_0
-    # logdet(A)
-    #     log of determinant of positive-definite A
     # ranked(v, k)
     #     kth smallest component of v
 
@@ -468,19 +468,40 @@ def ddirich_llf(x, alpha):
 
 def dmnorm_llf(x, mu, T):
     """multivariate normal([x1,...,xk]; mu, T); x_i in (-inf, inf); T = inv(Sigma)"""
+    # pdf = det(2 pi Sigma)^(-1/2) exp(-1/2 (x-mu)'Sigma^-1(x-mu))
+    # T = inv(Sigma), det(cA) = c^N det(A), det(A^-1) = det(A)^-1
+    # => pdf = (2 pi)^(-N/2) det(T)^(1/2) exp(-1/2 (x-mu)'T(x-mu))
     N = len(x)
-    return N*LOG_1_ROOT_2PI + logdet(T)/2 - np.dot(np.dot(x-mu, T), x-mu)/2
+    sign_det_T, logdet_T = np.linalg.slogdet(T)
+    llf = N*LOG_1_ROOT_2PI + logdet_T/2 - np.dot(np.dot(x-mu, T), x-mu)/2
+    #cov = np.linalg.inv(T)
+    #scipy_llf = scipy.stats.multivariate_normal.logpdf(x, mean=mu, cov=cov)
+    #print("mvn", llf, scipy_llf, scipy_llf-llf, T.flatten(), mu, x, logdet(T)/2)
+    return llf if sign_det_T >= 0 else -inf
 
 def dmt_llf(x, mu, T, k):
     """multivariate Student-t(x; mu, T, k); x_i in (-inf, inf); T = inv(Sigma)"""
     N = len(x)
-    return gammaln(k/2) + N/2*(log(k)+log(pi)) + logdet(T)/2 \
-        - (k+N)/2 * log(1 + np.dot(np.dot(x-mu, T), x-mu)/k)
+    sign_det_T, logdet_T = np.linalg.slogdet(T)
+    llf = (gammaln(k/2) + N/2*(log(k)+log(pi)) + logdet_T/2
+           - (k+N)/2 * log(1 + np.dot(np.dot(x-mu, T), x-mu)/k))
+    return llf if sign_det_T >= 0 else -inf
 
 def dwish_llf(x, V, n):
     """wishart(x; V, n); X,V in p x p positive definite; n > p-1"""
-    p = len(x)
-    tr = np.sum(np.diag(np.dot(np.linalg.inv(V), x)))
-    return (n-p-1)/2*logdet(x) - tr/2 - n*p/2*log(2) - n/2*logdet(V) \
-        - scipy.special.multigammaln(n/2, p)
+    try:
+        return scipy.stats.wishart.logpdf(x, n, V)
+    except Exception as exc:
+        #print(x, V, n, exc)
+        return -inf
+
+    ## X, V positive definite => X = X^T => tr(invV X) = sum_ij invV_ij X_ij
+    ## should use cholesky decomp instead of inv
+    #tr = np.sum(np.linalg.inv(V) * x)  # element-wise multiply
+    #p = len(x)
+    #sign_det_V, logdet_V = np.linalg.slogdet(V)
+    #sign_det_x, logdet_x = np.linalg.slogdet(x)
+    #llf = ((n-p-1)*logdet_x - tr - n*p*log(2) - n*logdet_V)/2 \
+    #      - scipy.special.multigammaln(n/2, p)
+    #return llf if sign_det_V >= 0 and sign_det_x >= 0 else -inf
 
