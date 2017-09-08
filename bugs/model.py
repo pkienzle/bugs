@@ -138,6 +138,8 @@ def step(x):
     return 1.0*(x>=0)
 def rank(v, s):
     return len(vi for vi in v if v < s)
+def sd(x):
+    return np.std(x, ddof=1)
 def sort(v):
     return list(sorted(v))
 
@@ -212,7 +214,7 @@ class BugsContext:
     eigen_values = wrapv(np.linalg.eigvals)
     prod = wrapv(np.prod)
     rank = wrap2v(rank)
-    sd = wrapv(np.std)
+    sd = wrapv(sd)
     sort = wrapv(sort)
     sum = wrapv(np.sum)
     logdet = wrapv(logdet)
