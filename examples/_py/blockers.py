@@ -20,6 +20,8 @@ Blocker: random effects meta-analysis of clinical trials
     }
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+
 from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dt_llf, dgamma_llf, dnorm_llf, ilogit

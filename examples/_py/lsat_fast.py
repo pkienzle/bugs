@@ -1,13 +1,18 @@
 """
 LSAT: item response
 
+[PAK: This is a numerical experiment that is not part of the openbugs
+distribution, and is not a recommendation for handling random effects models.]
+
 Modified LSAT to treat students with the same response as identical.  So
 rather than 1000 parameters representing the individual student ability
-we only need 32, which is one for each response.  This should be equivalent
-to marginalizing across the individual groups of students with the same set
-of responses.
+we only need 32, which is one for each response.  This is not the same as
+marginalizing across the individual groups of students with the same set
+of responses.  With correlated error, this is no longer a correct random effects
+model.  The solution is similar, but the width of the distribution is
+much reduced.
 
-The OpenBUGS model would be adjusted as follows:
+The equivalent OpenBUGS model would be adjusted as follows:
 
 ::
 
@@ -57,6 +62,7 @@ As a further trick, rather than forming the full student and response matrices,
 we simply multiply the response log-likelihood by the response frequency, which
 is computationally equivalent but much faster.
 """
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from numpy import exp, sqrt

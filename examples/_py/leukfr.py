@@ -40,6 +40,8 @@ LeukFr: Cox regression with random effects
     }
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+
 from bumps.names import *
 from numpy import exp, sqrt
 from bugs.parse import load, define_pars

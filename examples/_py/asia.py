@@ -15,6 +15,8 @@ Asia: expert system
     }
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+
 from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, round
@@ -68,7 +70,7 @@ integer_vars = [
 # uncomment the following to treat integer variables as integers.  Need to
 # verify that the mean value is updated appropriately.  Make sure it is using
 # rounding since our bounds are [0.5, 2.5].
-#problem.integer_vars = integer_vars
+problem.integer_vars = integer_vars
 
 
 openbugs_result = """

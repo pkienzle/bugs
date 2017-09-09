@@ -23,6 +23,7 @@ Rats: a normal hierarchical model
     }
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 

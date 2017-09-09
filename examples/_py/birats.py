@@ -25,6 +25,8 @@ matrix L with positive diagonal elements, and use $R = L L^T$.  The matrix
 $L$ is initialized with the cholesky decomposition of the initial $R$ value.
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+
 from bumps.names import *
 
 from math import sqrt

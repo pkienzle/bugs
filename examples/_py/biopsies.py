@@ -17,6 +17,8 @@ Biopsies: discrete variable latent class model
     }
 """
 
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+
 from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, ddirich_llf, dmulti_llf

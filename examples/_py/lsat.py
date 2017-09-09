@@ -34,6 +34,7 @@ LSAT: item response
         beta ~ dflat()T(0, )
     }
 """
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from numpy import exp, sqrt

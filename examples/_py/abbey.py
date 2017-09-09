@@ -19,6 +19,7 @@ Abbey National: A stable distribution
         sd.z <- sd(z[2:50])
     }
 """
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from __future__ import division
 

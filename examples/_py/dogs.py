@@ -66,6 +66,7 @@ problem = DirectProblem(dogs, p0, labels=labels, dof=dof)
 problem._bounds[1, :] = -0.00001
 problem.setp(p0)
 problem.derive_vars = post, post_vars
+problem.visible_vars = ["A", "B", "alpha", "beta"]
 
 
 openbugs_result = """
