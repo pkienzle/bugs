@@ -154,6 +154,60 @@ inverse = {
     }
 inverse.update(dict((v, k) for k, v in inverse.items()))
 
+def compress_pd(R):
+    """
+    Return a vector representing the positive definite matrix R.
+
+    This uses cholesky decomposition to convert the matrix R to lower
+    triangular matrix L, and stores the diagonals of L in a vector.
+
+    Unlike the positive definite matrix, the elements of L can be
+    modified independently through a Markov chain stepper, with
+    every configuration representing a positive (semi-definite)
+    matrix. The main diagonal is first in the vector so it is easily
+    constrained to be positive. This is necessary to avoid duplicate
+    solutions.
+
+    The total number of elements in the compressed pd is returned
+    by :func:`pd_size`.  Use expand_pd
+
+    **non-standard** This is not part of the standard bugs language.
+    """
+    return _compress_tril(np.linalg.cholesky(R))
+
+def expand_pd(v, n):
+    """
+    Return the positive definite matrix R stored in compressed vector v.
+
+    *n* is the size of the original matrix.
+
+    **non-standard** This is not part of the standard bugs language.
+    """
+    L = _expand_tril(v, n)
+    return np.dot(L, L.T)
+
+_TRIL_INDICES = {
+    1: ([0], [0]),
+    2: ([0, 1, 1], [0, 1, 0]),
+    3: ([0, 1, 2, 1, 2, 2], [0, 1, 2, 0, 1, 0]),
+    4: ([0, 1, 2, 3, 1, 2, 3, 2, 3, 3], [0, 1, 2, 3, 0, 1, 2, 0, 1, 0]),
+}
+
+def pd_size(n):
+    """the number of elements in an n X n lower triangular matrix"""
+    return int((n * (n+1))/2)
+
+def _compress_tril(L):
+    i, j = _TRIL_INDICES[L.shape[0]]
+    return L[i, j]
+
+def _expand_tril(v, n):
+    i, j = _TRIL_INDICES[n]
+    L = np.zeros((n, n))
+    L[i, j] = v
+    return L
+
+
 def wrap(fn):
     @staticmethod
     def wrapped(x):
