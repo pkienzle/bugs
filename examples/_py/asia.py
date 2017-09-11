@@ -21,14 +21,11 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, round
 
-# asia, dyspnoea
-# p.smoking[No/Yes]
-# p.tuberculosis[asia,No/Yes]
-# p.bronchitis[p.smoking,No/Yes]
-# p.lung.cancer[p.smoking,No/Yes]
-# p.xray[p.bronchitis|p.lung.cancer,No/Yes]
-# p.dyspnoea[either,bronchitis,No/Yes]
+# data: asia=2, dyspnoea=2,
+# p.smoking[2] p.tuberculosis[2,2] p.bronchitis[2,2],
+# p.lung.cancer[2,2], p.xray[2,2], p.dyspnoea[2,2,2]
 _, data = load('../Asiadata.txt')
+# init: smoking, tuberculosis, lung.cancer, bronchitis, xray
 pars = "smoking,tuberculosis,lung.cancer,bronchitis,xray".split(',')
 _, init = load('../Asiainits.txt')
 p0, labels = define_pars(init, pars)

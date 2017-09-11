@@ -1,6 +1,6 @@
 """
-Birds: species richness,estimating the size of a Closed "Population" 
-with individual heterogeneity in detection probability 
+Birds: species richness,estimating the size of a Closed "Population"
+with individual heterogeneity in detection probability
 
 ::
 
@@ -27,7 +27,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dunif_llf, dnorm_llf, dgamma_llf, ilogit
 
-#  data: y[nind+nz], nind, nz, J
+#  data: nind=71, nz=250, J=50, y[nind+nz]
 vars = "y,nind,nz,J".split(',')
 _, data = load('../Birdsdata.txt')
 y, nind, nz, J = (data[p] for p in vars)

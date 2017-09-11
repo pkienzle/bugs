@@ -1,5 +1,5 @@
 """
-Bones: latent trait model for multiple ordered categorical responses 
+Bones: latent trait model for multiple ordered categorical responses
 
 ::
 
@@ -31,12 +31,12 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, dnorm_llf, ilogit
 
-#  data: rt[Num], nt[Num], rc[Num], nc[Num], Num
+#  data: nChild=13, nInd=34, gamma[nInd,4], delt[nInd], ncat[nInd], grade[nChild,nInd]
 vars = "nChild,nInd,gamma,delta,ncat,grade".split(',')
 _, data = load('../Bonesdata.txt')
 nChild, nInd, gamma, delta, ncat, grade = (data[p] for p in vars)
 ncat = np.asarray(ncat, 'i')
-# init: d, delta.new, tau, mu[Num], delta[Num]
+# init: theta[nChild], grade[nChild, nInd]
 pars = "theta,grade".split(',')
 _, init = load('../Bonesinits1.txt')
 p0, labels = define_pars(init, pars)

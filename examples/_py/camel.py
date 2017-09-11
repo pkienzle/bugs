@@ -29,12 +29,11 @@ raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 
-## Rats model
 from math import sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dgamma_llf, dmnorm_llf, dwish_llf
 
-# data: N, Y[N,2]; note that many Y are fitted
+# data: N=12, Y[N,2]; note that many Y are fitted
 _, data = load('../Cameldata.txt')
 N, Y = data["N"], data["Y"]
 
@@ -42,6 +41,7 @@ N, Y = data["N"], data["Y"]
 # triangular portion; store diagonally, starting with main diagonal, so that
 # it is easy to constrain the diagonal entries to be positive.
 pars =  'tau.L,Y.fit'.split(',')
+# init: tau[2,2], Y[N,2]
 _, init = load('../Camelinits.txt')
 L = np.linalg.cholesky(init['tau'])
 init['tau.L'] = np.array([L[0, 0], L[1, 1], L[1, 0]])

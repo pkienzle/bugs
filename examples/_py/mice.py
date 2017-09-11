@@ -26,7 +26,7 @@ from numpy import exp, sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dweib_C_llf, dexp_llf
 
-#  data: t[M,N], t.cen[M,N], M=4, N=20
+#  data: M=4, N=20, t[M,N], t.cen[M,N]
 vars = "t,t.cen,M,N".split(',')
 _, data = load('../Micedata.txt')
 t, t_cen, M, N = (data[p] for p in vars)

@@ -29,7 +29,7 @@ from numpy import exp, sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dgamma_llf, dbin_llf, ilogit
 
-#  data: r1[K], n1[K], r0[K], n0[K], year[K], K=120
+#  data: K=120, r1[K], n1[K], r0[K], n0[K], year[K]
 vars = "r1,n1,r0,n0,year,K".split(',')
 _, data = load('../Oxforddata.txt')
 r1, n1, r0, n0, year, K = (data[p] for p in vars)

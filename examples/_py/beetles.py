@@ -20,7 +20,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import logit, probit, cloglog, inverse, dnorm_llf, dbin_llf
 
-#  data: x[N],n[N],r[N],N
+#  data: N=8, x[N],n[N],r[N]
 vars = "x n r N".split()
 _, data = load('../Beetlesdata.txt')
 x, n, r, N = (data[p] for p in vars)

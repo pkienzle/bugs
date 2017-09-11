@@ -71,7 +71,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dpois_llf, dmulti_llf
 
-#  data: I, J, K, X[I, J, K]
+#  data: I=4, J=2, K=5, X[I, J, K]
 vars = "I,J,K,X".split(',')
 _, data = load('../Aligatorsdata.txt')
 I, J, K, X = (data[p] for p in vars)

@@ -97,7 +97,7 @@ import scipy.special
 from scipy.special import betaln, gammaln, xlogy, xlog1py
 import math
 import numpy as np
-from numpy import exp, log, pi, inf, nan
+from numpy import exp, log, pi, inf, nan, mean
 LOG_1_ROOT_2PI = -0.5*log(2*pi)
 ROOT_2 = math.sqrt(2)
 

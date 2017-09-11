@@ -32,11 +32,12 @@ from math import sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dgamma_llf
 
-
+# data: N=30, T=5, xbar, Y[30,25]
 _, data = load('../Ratsdata.txt')
 N, T = data["N"], data["T"]
 x, xbar, Y = data["x"], data["xbar"], data["Y"]
 
+# init: alpha[N], beta[N], alpha.c, beta.c, tau.c, alpha.tau, beta.tau
 pars =  'alpha,beta,alpha.c,alpha.tau,beta.c,beta.tau,tau.c'.split(',')
 _, init = load('../Ratsinits.txt')
 p0, labels = define_pars(init, pars)

@@ -15,11 +15,12 @@ Seeds: Random effect logistic regression
     }
 """
 
+
 from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dnorm_llf, dgamma_llf, ilogit
 
-# data: N, r[N], n[N], x1[N], x2[N]
+# data: N=21, r[N], n[N], x1[N], x2[N]
 vars = "r,n,x1,x2,N".split(',')
 _, data = load('../Seedsdata.txt')
 r, n, x1, x2, N = (data[p] for p in vars)

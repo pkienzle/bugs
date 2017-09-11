@@ -47,7 +47,7 @@ from numpy import exp, sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dpois_llf, dgamma_llf, step
 
-#  data: N=42, T=17, eps, Npairs, t[Npairs], obs.t[N], pair[2*Npair], fail[T], Z[N]
+#  data: N=42, T=17, eps, Npairs=21, t[Npairs], obs.t[N], pair[2*Npair], fail[T], Z[N]
 vars = "N,T,eps,Npairs,t,obs.t,pair,fail,Z".split(',')
 _, data = load('../Leukfrdata.txt')
 N, T, eps, Npairs, t, obs_t, pair, fail, Z = (data[p] for p in vars)

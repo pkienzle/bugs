@@ -17,14 +17,15 @@ Biopsies: discrete variable latent class model
     }
 """
 
-raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+#raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dcat_llf, ddirich_llf, dmulti_llf
 
-# data: biopsies, error, ns, prior
+# data: ns=157, biopsies[ns,4], error[4,4], prior[4]
 _, data = load('../Biopsiesdata.txt')
+# init: p[4], error[4,4]
 _, init = load('../Biopsiesinits.txt')
 #_,init = load('../Biopsiesinits1.txt')
 

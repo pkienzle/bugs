@@ -35,6 +35,7 @@ from bugs.model import dnorm_llf, dgamma_llf, dmnorm_llf, dwish_llf
 import scipy.sparse
 
 
+# N=30, T=5, x[T], Omega[2,2], mean[2], prec[2,2], Y[N,T]
 _, data = load('../BiRatsdata.txt')
 x, N, T = data["x"], data["N"], data["T"]
 Omega, mean, prec, Y = data["Omega"], data["mean"], data["prec"], data["Y"]

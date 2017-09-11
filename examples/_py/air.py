@@ -20,7 +20,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dnorm_llf, logit, inverse
 
-# J, y[J], n[J], Z[J], tau, alpha, beta
+# J=3, y[J], n[J], Z[J], tau, alpha, beta
 _,data = load('../Airdata.txt')
 # J = data["J"]
 # theta[2], X[J]

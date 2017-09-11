@@ -25,7 +25,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dgamma_llf, dpois_llf
 
-#  data: doses, plates, y[doses,plates], x[doses]
+#  data: doses=6, plates=3, y[doses,plates], x[doses]
 vars = "doses,plates,y,x".split(',')
 _, data = load('../Salmdata.txt')
 doses, plates, y, x = (data[p] for p in vars)

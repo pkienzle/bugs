@@ -92,6 +92,7 @@ MARGINALIZATION_COUNT = int(sys.argv[2])
 Nprior = 6 if PRIOR == 0 else 1
 Nstudy = 8
 
+# not stored: Nstudy=8, Nprior=6
 # data: rt[Nstudy], nt[Nstudy], rc[Nstudy], nc[Nstudy]
 _, data = load('../Magnesiumdata.txt')
 rt, nt, rc, nc = data["rt"], data["nt"], data["rc"], data["nc"]

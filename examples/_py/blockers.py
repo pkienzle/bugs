@@ -26,7 +26,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dt_llf, dgamma_llf, dnorm_llf, ilogit
 
-#  data: rt[Num], nt[Num], rc[Num], nc[Num], Num
+#  data: Num=22, rt[Num], nt[Num], rc[Num], nc[Num]
 vars = "rt,nt,rc,nc,Num".split(',')
 _, data = load('../Blockersdata.txt')
 rt, nt, rc, nc, Num = (data[p] for p in vars)

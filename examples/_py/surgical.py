@@ -16,7 +16,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbin_llf, dbeta_llf
 
-#  data: n[N], r[N], N
+#  data: N=12, n[N], r[N]
 vars = "n,r,N".split(',')
 _, data = load('../Surgicaldata.txt')
 n, r, N = (data[p] for p in vars)

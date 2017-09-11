@@ -19,13 +19,13 @@ Abbey National: A stable distribution
         sd.z <- sd(z[2:50])
     }
 """
-raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
-
 from __future__ import division
+
+#raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from bugs.parse import load, define_pars
-from bugs.model import dstable_llf
+from bugs.model import dstable_llf, mean, sd
 
 N = 50
 price = np.array([
@@ -35,7 +35,7 @@ price = np.array([
     293, 306, 303, 301, 303, 308, 305, 302, 301, 297, 299,
     ])
 z = price[1:] / price[:-1] - 1
-mean_z, sd_z = np.mean(z), np.std(z, ddof=1)
+mean_z, sd_z = mean(z), sd(z)
 
 labels = "alpha beta gamma delta".split()
 def abbey(alpha, beta, gamma, delta):

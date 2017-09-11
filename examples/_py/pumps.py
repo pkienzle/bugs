@@ -19,7 +19,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dgamma_llf, dpois_llf, dexp_llf
 
-#  data: rt[Num], nt[Num], rc[Num], nc[Num], Num
+#  data: N=10, t[N], x[N]
 vars = "t,x,N".split(',')
 _, data = load('../Pumpsdata.txt')
 t, x, N = (data[p] for p in vars)

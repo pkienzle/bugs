@@ -19,7 +19,7 @@ from bumps.names import *
 from bugs.parse import load, define_pars
 from bugs.model import dbern_llf
 
-#  data: Dogs, Trials, Y[Dogs,Trials]
+#  data: Dogs=30, Trials=25, Y[Dogs,Trials]
 vars = "Dogs,Trials,Y".split(',')
 _, data = load('../Dogsdata.txt')
 Dogs, Trials, Y = (data[p] for p in vars)
