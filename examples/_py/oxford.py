@@ -22,7 +22,7 @@ Oxford: smooth fit to log-odds ratios
     }
 """
 
-raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+#raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from numpy import exp, sqrt
