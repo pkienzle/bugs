@@ -78,9 +78,10 @@ def reflect(v, low, high):
     return np.clip(v, low, high)
 
 class Monitor(object):
-    def __init__(self):
+    def __init__(self, num_iterations):
         self.timer, self.iteration = time.time(), 0
         self.index, self.best, self.best_x = 0, -inf, None
+        self.num_iterations = num_iterations
     def monitor(self, p, lnlike):
         self.index += 1
         index = np.argmax(lnlike)
@@ -88,11 +89,11 @@ class Monitor(object):
             self.best, self.best_x = lnlike.flat[index], p.reshape((-1,p.shape[-1]))[index]
         now = time.time()
         if now > self.timer+1:
-            print(self.index, self.best)
+            print(self.index, "of", self.num_iterations, self.best)
             self.timer = now
     __call__ = monitor
 
-def run_emcee(nllf, p0, bounds, burn, steps, nwalkers, temperatures):
+def run_emcee(nllf, p0, bounds, burn, nsamples, nwalkers, temperatures):
     ntemps = len(temperatures)
     log_prior = lambda p: 0 if ((p>=bounds[0])&(p<=bounds[1])).all() else -inf
     log_likelihood = lambda p: -nllf(p)
@@ -101,7 +102,10 @@ def run_emcee(nllf, p0, bounds, burn, steps, nwalkers, temperatures):
         logl=log_likelihood, logp=log_prior,
         betas=1/temperatures)
 
-    monitor = Monitor()
+    nthin = 1
+    steps = nsamples//(nwalkers*nthin)
+
+    monitor = Monitor(burn+steps)
 
     # Burn-in
     pop = eps_init(nwalkers*ntemps, p0, bounds).reshape(ntemps, nwalkers, -1)
@@ -111,7 +115,6 @@ def run_emcee(nllf, p0, bounds, burn, steps, nwalkers, temperatures):
     print("== after burn ==", monitor.index, monitor.best)
 
     # Collect
-    nthin = 1
     for p, lnprob, lnlike in sampler.sample(p, lnprob0=lnprob,
                                             lnlike0=lnlike,
                                             iterations=nthin*steps, thin=nthin):
@@ -134,11 +137,15 @@ def build_state(sampler, problem):
     state.labels = problem.labels
 
 class Draw(object):
-    def __init__(self, logp, points, weights, labels, vars=None):
+    def __init__(self, logp, points, weights, labels, vars=None, integers=None):
         self.logp = logp
         self.weights = weights
         self.points = points[:,vars] if vars else points
         self.labels = [labels[v] for v in vars] if vars else labels
+        if integers is not None:
+            self.integers = integers[vars] if vars else integers
+        else:
+            self.integers = None
 
 def process_vars(T, draw):
     import matplotlib.pyplot as plt
@@ -157,7 +164,7 @@ def process_vars(T, draw):
 
 def main():
     filename = sys.argv[1]
-    burn, steps = int(sys.argv[2]), int(sys.argv[3])
+    burn, nsamples = int(sys.argv[2]), int(sys.argv[3])
     options = sys.argv[4:]
 
     # Load the problem
@@ -167,14 +174,15 @@ def main():
     p0 = problem.getp()
     bounds = problem._bounds
     labels = problem.labels()
-    visible_vars = getattr(problem, 'visible_vars', labels)
+    visible_vars = getattr(problem, 'visible_vars', None)
+    integer_vars = getattr(problem, 'integer_vars', None)
     derived_vars, derived_labels = getattr(problem, 'derive_vars', (None, None))
 
     # Perform MCMC
     dim = len(p0)
     nwalkers = 2*dim
     temperatures = np.array([1., 3.])
-    sampler = run_emcee(nllf, p0, bounds, burn, steps, nwalkers, temperatures=temperatures)
+    sampler = run_emcee(nllf, p0, bounds, burn, nsamples, nwalkers, temperatures=temperatures)
     ntemps = len(temperatures)
     samples = np.reshape(sampler.chain, (ntemps, -1, dim))
     logp = np.reshape(sampler.lnlikelihood, (ntemps, -1))
@@ -190,9 +198,12 @@ def main():
 
     # plot the results
     vars = [labels.index(p) for p in visible_vars] if visible_vars else None
+    integers = np.array([var in integer_vars for var in labels]) if integer_vars else None
     for k, T in enumerate(temperatures):
-        draw = Draw(logp[k], samples[k], None, labels, vars=vars)
+        draw = Draw(logp[k], samples[k], None, labels, vars=vars, integers=integers)
         process_vars(T, draw)
+
+    vars_int = [labels.index(p) for p in visible_vars] if visible_vars else None
     import matplotlib.pyplot as plt; plt.show()
 
 if __name__ == "__main__":
