@@ -17,7 +17,9 @@ Biopsies: discrete variable latent class model
     }
 """
 
-#raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+# See below re: 'true'; the model implemented herein may be completely wrong.
+# Need to check it against OpenBUGS.
+raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
 
 from bumps.names import *
 from bugs.parse import load, define_pars
@@ -38,7 +40,8 @@ nbiops = np.sum(biopsies, axis=1)
 #error_init = init['error']
 #error[~np.isnan(error_init)] = error_init[~np.isnan(error_init)]
 
-# The variable true is not initialized, but it seems to be a fitting variable
+# The variable 'true' is not initialized, but it may be a fitting variable
+#
 # The model description says:
 #
 #   The sampling procedure may not detect the area of maximum rejection,
@@ -53,12 +56,12 @@ nbiops = np.sum(biopsies, axis=1)
 #   sampling procedure will find a configuration of starting values that is
 #   compatible with the expressed constraints.
 #
-# I am taking this to mean that true is is obvious from the data and doesn't
-# need to be fitted (e.g., by counting the number of zeros at the end of
-# each row); if we allow it to be fitted then it could possibly break the
-# no false positive restriction.
-#
-# I have no idea how the BUGS interpreter can possibly figure this out.
+# Regardless, since blind metropolis-hastings will fall over if each of the
+# 600 true values is a fitted parameter, I'm going to pretend that true
+# can be derived from the data (e.g., by counting the number of zeros at
+# the end of each row), and that it is used to condition the fitted
+# 'p' variables representing the probability of 'true'.  If we allow 'true'
+# to be fitted then it could possibly break the no false positive restriction.
 
 def find_true(s):
     if s[3] != 0:
