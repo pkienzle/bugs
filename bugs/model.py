@@ -488,7 +488,7 @@ def dstable_llf(x, alpha, beta, gamma, delta):
         import levy
     except ImportError:
         raise ImportError("Requires pylevy package https://github.com/pkienzle/pylevy")
-    return log(levy.levy(x, alpha, beta, mu=gamma, sigma=delta, par=1))
+    return log(np.maximum(1e-100, levy.levy(x, alpha, beta, mu=gamma, sigma=delta, par=1)))
 
 def dt_llf(x, mu, tau, k):
     """Student-t(x; tau, k); x in (-inf, inf); k=1,2,3,..."""

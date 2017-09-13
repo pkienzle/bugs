@@ -115,8 +115,8 @@ def pre():
 
 group, response = pre()
 
-MARGINALIZATION_COUNT = 10
-#MARGINALIZATION_COUNT = 1
+#MARGINALIZATION_COUNT = 100
+MARGINALIZATION_COUNT = 1
 
 def nllf(p):
     beta, pi, kappa, tau = p[:4]
