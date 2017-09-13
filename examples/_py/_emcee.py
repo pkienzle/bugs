@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import print_function, division
+
 import sys
+import os
 import time
 
 from numpy import inf
@@ -180,14 +182,21 @@ def main():
     model = load_problem(filename, options=options)
     problem = model['problem']
     nllf = problem.nllf
-    ## reload from /tmp/t1; handy for continuing from a bumps fit
-    #import bumps.cli; bumps.cli.load_best(problem, "/tmp/t1")
-    p0 = problem.getp()
     bounds = problem._bounds
     labels = problem.labels()
     visible_vars = getattr(problem, 'visible_vars', None)
     integer_vars = getattr(problem, 'integer_vars', None)
     derived_vars, derived_labels = getattr(problem, 'derive_vars', (None, None))
+
+    # reload parfile if it exists, otherwise get initial parameters from model
+    parfile = os.path.splitext(os.path.split(filename)[1])[0] + ".par"
+    if os.path.exists(parfile):
+        print("loading initial parameters from "+parfile)
+        with open(parfile) as fd:
+            p0 = [float(value) for line in fd for name, value in [line.split()]]
+        p0 = np.array(p0, 'd')
+    else:
+        p0 = problem.getp()
 
     # Perform MCMC
     dim = len(p0)
@@ -196,6 +205,13 @@ def main():
     ntemps = len(sampler.betas)
     samples = np.reshape(sampler.chain, (ntemps, -1, dim))
     logp = np.reshape(sampler.lnlikelihood, (ntemps, -1))
+
+    # Write best
+    index = np.argmax(logp)
+    best_p = np.reshape(samples, (-1, dim))[np.argmax(logp)]
+    with open(parfile, "w") as fd:
+        for k, (var, value) in enumerate(zip(labels, best_p)):
+            fd.write("%s %.15g\n"%(var, value))
 
     # process derived parameters
     if derived_vars:

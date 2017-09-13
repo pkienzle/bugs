@@ -14,6 +14,7 @@
 /build/
 /dist/
 /bugs.egg-info/
+/examples/_py/*.par
 
 # doc targets
 /doc/_build/
