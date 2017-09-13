@@ -21,9 +21,15 @@ Rats: a normal hierarchical model
         beta.tau ~ dgamma(0.001,0.001)
         alpha0 <- alpha.c - xbar * beta.c
     }
-"""
 
-raise NotImplementedError("Model fails to reproduce the OpenBUGS result")
+Although Bumps and emcee programs eventually arrive at approximately
+the same 95% CI as OpenBUGS, it takes much longer and the correlation
+plots have unexpected structure.  Furthermore, when starting from
+a local maximum (e.g., after running Nelder-Mead simplex a few times
+with a random initial simplex), the estimated CI drops to almost zero.
+The independent parameters, *alpha[i]* and *beta[i]* for each rat
+provide too many degrees of freedom for blind search.
+"""
 
 from bumps.names import *
 
@@ -32,7 +38,7 @@ from math import sqrt
 from bugs.parse import load, define_pars
 from bugs.model import dnorm_llf, dgamma_llf
 
-# data: N=30, T=5, xbar, Y[30,25]
+# data: N=30, T=5, xbar, Y[N,T]
 _, data = load('../Ratsdata.txt')
 N, T = data["N"], data["T"]
 x, xbar, Y = data["x"], data["xbar"], data["Y"]
