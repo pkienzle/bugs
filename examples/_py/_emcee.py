@@ -94,13 +94,17 @@ class Monitor(object):
     __call__ = monitor
 
 def run_emcee(nllf, p0, bounds, burn, nsamples, nwalkers, temperatures):
-    ntemps = len(temperatures)
+    if np.isscalar(temperatures):
+        ntemps, betas = temperatures, None
+    else:
+        ntemps, betas = len(temperatures), 1/temperatures
     log_prior = lambda p: 0 if ((p>=bounds[0])&(p<=bounds[1])).all() else -inf
     log_likelihood = lambda p: -nllf(p)
     sampler = emcee.PTSampler(
         ntemps=ntemps, nwalkers=nwalkers, dim=len(p0),
         logl=log_likelihood, logp=log_prior,
-        betas=1/temperatures)
+        betas=betas,
+        )
 
     nthin = 1
     steps = nsamples//(nwalkers*nthin)
@@ -163,6 +167,11 @@ def process_vars(T, draw):
 
 
 def main():
+    ## Hard-coded options
+    #temperatures = 5
+    temperatures = np.array([1, 3], 'd')
+
+    ## command line options
     filename = sys.argv[1]
     burn, nsamples = int(sys.argv[2]), int(sys.argv[3])
     options = sys.argv[4:]
@@ -171,6 +180,8 @@ def main():
     model = load_problem(filename, options=options)
     problem = model['problem']
     nllf = problem.nllf
+    ## reload from /tmp/t1; handy for continuing from a bumps fit
+    #import bumps.cli; bumps.cli.load_best(problem, "/tmp/t1")
     p0 = problem.getp()
     bounds = problem._bounds
     labels = problem.labels()
@@ -181,9 +192,8 @@ def main():
     # Perform MCMC
     dim = len(p0)
     nwalkers = 2*dim
-    temperatures = np.array([1., 3.])
     sampler = run_emcee(nllf, p0, bounds, burn, nsamples, nwalkers, temperatures=temperatures)
-    ntemps = len(temperatures)
+    ntemps = len(sampler.betas)
     samples = np.reshape(sampler.chain, (ntemps, -1, dim))
     logp = np.reshape(sampler.lnlikelihood, (ntemps, -1))
 
@@ -196,14 +206,18 @@ def main():
         dim += len(derived_labels)
         samples = np.reshape(samples, (ntemps, -1, dim))
 
-    # plot the results
-    vars = [labels.index(p) for p in visible_vars] if visible_vars else None
+    # identify visible and integer variables
+    visible = [labels.index(p) for p in visible_vars] if visible_vars else None
     integers = np.array([var in integer_vars for var in labels]) if integer_vars else None
-    for k, T in enumerate(temperatures):
-        draw = Draw(logp[k], samples[k], None, labels, vars=vars, integers=integers)
-        process_vars(T, draw)
 
-    vars_int = [labels.index(p) for p in visible_vars] if visible_vars else None
+    # plot the results, but only for the lowest and highest temperature
+    draw = Draw(logp[0], samples[0], None, labels, vars=visible, integers=integers)
+    process_vars(1/sampler.betas[0], draw)
+    if len(sampler.betas) > 1:
+        draw = Draw(logp[-1], samples[-1], None, labels, vars=visible, integers=integers)
+        process_vars(1/sampler.betas[-1], draw)
+
+    # show the plots
     import matplotlib.pyplot as plt; plt.show()
 
 if __name__ == "__main__":
