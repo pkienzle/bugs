@@ -30,7 +30,7 @@ init['theta'] = np.zeros(N)
 p0, labels = define_pars(init, pars)
 
 
-def pumps(pars):
+def nllf(pars):
     alpha, beta, theta = pars[0], pars[1], pars[2:]
     lambda_ = theta * t
 
@@ -43,7 +43,7 @@ def pumps(pars):
     return -cost
 
 dof = 1
-problem = DirectProblem(pumps, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem._bounds[0, :] = 0.
 problem.setp(p0)
 

@@ -38,7 +38,7 @@ pars = "alpha,beta1,beta2,tau,mu,b".split(',')
 _, init = load('../Oxfordinits.txt')
 p0, labels = define_pars(init, pars)
 
-def oxford(p):
+def nllf(p):
     alpha, beta1, beta2, tau = p[:4]
     mu, b = p[4:4+K], p[4+K:]
 
@@ -69,7 +69,7 @@ def post(p):
 post_vars = ["sigma"]
 
 dof = 100
-problem = DirectProblem(oxford, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 #problem._bounds[0, 3] = 0  # tau bounded below by 0
 problem.setp(p0)

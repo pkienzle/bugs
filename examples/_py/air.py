@@ -27,7 +27,7 @@ _,data = load('../Airdata.txt')
 _,init = load('../Airinits.txt')
 p0, labels = define_pars(init, ("theta", "X"))
 
-def air(pars):
+def nllf(pars):
     theta, X = pars[0:2], pars[2:]
     p = np.array([inverse[logit](theta[0] + theta[1]*Xj) for Xj in X])
     mu = data["alpha"] + data["beta"] * data["Z"]
@@ -39,7 +39,7 @@ def air(pars):
     return -cost
 
 
-problem = DirectProblem(air, p0, labels=labels, dof=1)
+problem = DirectProblem(nllf, p0, labels=labels, dof=1)
 problem.setp(p0)
 
 openbugs_result = """

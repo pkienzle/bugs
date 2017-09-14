@@ -1,5 +1,5 @@
 """
-Alligators: multinomial - logistic regression
+Aligators: multinomial - logistic regression
 
 ::
 
@@ -83,7 +83,7 @@ p0, labels = define_pars(init, pars)
 active_index = ~np.isnan(p0)
 labels = [label for label, active in zip(labels, active_index) if active]
 
-def aligators(active_pars):
+def nllf(active_pars):
     pars = p0.copy()
     pars[active_index] = active_pars
     alpha = pars[0:K]
@@ -140,7 +140,7 @@ post_vars = bvars + gvars
 
 num_pars = np.sum(active_index)
 dof = I*J*K-num_pars
-problem = DirectProblem(aligators, p0[active_index], labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0[active_index], labels=labels, dof=dof)
 problem.setp(p0[active_index])
 problem.derive_vars = post, post_vars
 bvars = ["b[%d, %d]"%(i+1, k+2) for i in range(4) for k in range(4)]

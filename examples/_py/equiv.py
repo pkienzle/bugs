@@ -50,7 +50,7 @@ def pre():
     return sign_k, sign_T
 sign_k, sign_T = pre()
 
-def equiv(p):
+def nllf(p):
     mu, phi, pi, tau1, tau2 = p[:5]
     delta = p[5:]
     m = mu + sign_T * phi / 2 + sign_k[None, :] * pi / 2 + delta[:, None]
@@ -76,7 +76,7 @@ def post(p):
 post_vars = ["equiv", "sigma1", "sigma2", "theta"]
 
 dof = 100
-problem = DirectProblem(equiv, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 problem._bounds[0, 3:5] = 0  # tau1, tau2 bounded below by 0
 problem.setp(p0)

@@ -30,7 +30,7 @@ pars = "b,tau,mu".split(',')
 _, init = load('../Surgicalrandinits.txt')
 p0, labels = define_pars(init, pars)
 
-def surgicalrand(p):
+def nllf(p):
     b, tau, mu = p[:-2], p[-2], p[-1]
 
     p = ilogit(b)
@@ -53,7 +53,7 @@ def post(p):
 post_vars = PVARS + ["pop.mean", "sigma"]
 
 dof = 100
-problem = DirectProblem(surgicalrand, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem._bounds[0, -2] = 0.0  # tau >= 0
 problem.setp(p0)
 problem.derive_vars = post, post_vars

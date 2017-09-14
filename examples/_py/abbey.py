@@ -45,11 +45,11 @@ z = price[1:] / price[:-1] - 1
 mean_z, sd_z = mean(z), sd(z)
 
 labels = "alpha beta gamma delta".split()
-def abbey(alpha, beta, gamma, delta):
+def nllf(alpha, beta, gamma, delta):
     log_likelihood = np.sum(dstable_llf(z, alpha, beta, gamma, delta))
     return -log_likelihood
 
-M = PDF(abbey, dof=len(z)-4, alpha=1.7, beta=0.5, gamma=0.00029, delta=0.0065)
+M = PDF(nllf, dof=len(z)-4, alpha=1.7, beta=0.5, gamma=0.00029, delta=0.0065)
 M.alpha.range(1.1, 2)
 M.beta.range(-1, 1)
 M.gamma.range(-0.05, 0.05)
@@ -97,10 +97,10 @@ def brute_force():
             """
             for k, a in enumerate(alpha):
                 for l, b in enumerate(beta):
-                    llf[k, l] = -abbey(a, b, g, d)
+                    llf[k, l] = -nllf(a, b, g, d)
                     if not np.isfinite(llf[k,l]):
                         print("levy(z,%g,%g,%g,%g)"%(a, b, g, d))
-            #llf = -abbey(A, B, g, d)
+            #llf = -nllf(A, B, g, d)
             llf_max = llf.max()
             alpha_beta += exp(llf)
             gamma_delta[i, j] = np.trapz(np.trapz(exp(llf-llf_max), dx=dbeta), dx=dalpha)

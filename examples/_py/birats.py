@@ -50,7 +50,7 @@ init['L'] = np.array([L[0, 0], L[1, 1], L[1, 0]])
 p0, labels = define_pars(init, pars)
 
 
-def birats(p):
+def nllf(p):
     mu_beta, tauC = p[0:2], p[2]
     beta = p[3:30*2+3].reshape(30, 2)
     L11, L22, L21 = p[30*2+3:30*2+3+3]
@@ -73,7 +73,7 @@ def post(p):
     return [sigma] + R
 post_vars = ["sigma", "R[1,1]", "R[2,1]", "R[1,2]", "R[2,2]"]
 
-problem = DirectProblem(birats, p0, labels=labels, dof=T*N-len(p0))
+problem = DirectProblem(nllf, p0, labels=labels, dof=T*N-len(p0))
 problem._bounds[0,2] = 0 # limit tau_c to [0,inf)
 problem._bounds[0,-3:-1] = 0 # limit R=LL^T diagonal to positive values
 problem.setp(p0)

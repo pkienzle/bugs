@@ -42,7 +42,7 @@ def pre():
 
 y, xa, xs = pre()
 
-def dogs(p):
+def nllf(p):
     alpha, beta = p
     p = exp(alpha*xa + beta*xs)
 
@@ -59,7 +59,7 @@ def post(p):
 post_vars = ["A", "B"]
 
 dof = 100
-problem = DirectProblem(dogs, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 #alpha ~ dflat()T(, -0.00001)
 #beta ~ dflat()T(, -0.00001)

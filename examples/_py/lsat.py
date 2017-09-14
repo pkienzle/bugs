@@ -61,7 +61,7 @@ def pre():
     return r
 r = pre()
 
-def lsat(p):
+def nllf(p):
     alpha, beta, theta = p[:T], p[T], p[T+1:]
 
     p = ilogit(beta*theta[:, None] - alpha[None, :])
@@ -81,7 +81,7 @@ def post(p):
 post_vars = ["a[%d]"%k for k in range(1, T+1)]
 
 dof = 100
-problem = DirectProblem(lsat, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 problem._bounds[0, T] = 0  # beta = dflat()T(0, )
 problem.setp(p0)

@@ -35,7 +35,7 @@ pars = "d,delta.new,tau,mu,delta".split(',')
 _, init = load('../Blockersinits1.txt')
 p0, labels = define_pars(init, pars)
 
-def blockers(pars):
+def nllf(pars):
     d, delta_new, tau = pars[0:3]
     mu, delta = pars[3:3+Num], pars[3+Num:3+2*Num]
 
@@ -60,7 +60,7 @@ def post(pars):
 post_vars = ["sigma"]
 
 dof = 1
-problem = DirectProblem(blockers, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem._bounds[0, 2] = 0  # tau in [0, inf]
 problem.setp(p0)
 problem.derive_vars = post, post_vars

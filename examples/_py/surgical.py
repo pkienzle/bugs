@@ -25,7 +25,7 @@ pars = "p".split(',')
 _, init = load('../Surgicalinits.txt')
 p0, labels = define_pars(init, pars)
 
-def surgical(p):
+def nllf(p):
 
     cost = 0
     cost += np.sum(dbeta_llf(p, 1.0, 1.0))
@@ -34,7 +34,7 @@ def surgical(p):
     return -cost
 
 dof = 100
-problem = DirectProblem(surgical, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem._bounds[0, :] = 0.0
 problem._bounds[1, :] = 1.0
 problem.setp(p0)

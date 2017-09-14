@@ -31,7 +31,7 @@ _, init = load('../Seedsinits.txt')
 init['b'] = np.zeros(N)
 p0, labels = define_pars(init, pars)
 
-def seeds(p):
+def nllf(p):
     alpha0, alpha1, alpha2, alpha12, tau = p[:5]
     b = p[5:]
 
@@ -55,7 +55,7 @@ def post(p):
 post_vars = ["sigma"]
 
 dof = 100
-problem = DirectProblem(seeds, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem.setp(p0)
 problem._bounds[0, 4] = 0  # tau >= 0
 problem.derive_vars = post, post_vars

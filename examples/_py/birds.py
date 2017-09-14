@@ -40,7 +40,7 @@ p0, labels = define_pars(init, pars)
 p0 = np.hstack((p0, np.zeros(nind+nz) + p0[0]))
 labels.extend("eta[%d]"%k for k in range(1, nind+nz+1))
 
-def birds(pars):
+def nllf(pars):
     mu, tau, psi, z = pars[0], pars[1], pars[2], pars[3:3+nind+nz]
     eta = pars[3+nind+nz:]
 
@@ -65,7 +65,7 @@ def post(pars):
 post_vars = ["N", "sigma"]
 
 dof = 1
-problem = DirectProblem(birds, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 problem._bounds[0, 1] = 0  # tau in [0, inf]
 problem.setp(p0)
 problem.derive_vars = post, post_vars

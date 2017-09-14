@@ -48,7 +48,7 @@ pars =  'alpha,beta,alpha.c,alpha.tau,beta.c,beta.tau,tau.c'.split(',')
 _, init = load('../Ratsinits.txt')
 p0, labels = define_pars(init, pars)
 
-def rats(p):
+def nllf(p):
     alpha, beta = p[0:N], p[N:2*N]
     alpha_c, alpha_tau, beta_c, beta_tau, tau_c = p[2*N:2*N+5]
     mu = alpha[:, None] + beta[:, None]*(x[None, :] - xbar)
@@ -72,7 +72,7 @@ def post(p):
 post_vars = ["alpha0", "sigma"]
 
 
-problem = DirectProblem(rats, p0, labels=labels, dof=T*N-len(p0))
+problem = DirectProblem(nllf, p0, labels=labels, dof=T*N-len(p0))
 # limit tau_c, alpha_tau, beta_tau to [0,inf)
 problem._bounds[0,2*N] = 0
 problem._bounds[0,2*N+2] = 0

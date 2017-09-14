@@ -36,7 +36,7 @@ _, init = load('../Salminits.txt')
 init["lambda"] = np.zeros((doses, plates))
 p0, labels = define_pars(init, pars)
 
-def salm(p):
+def nllf(p):
     alpha, beta, gamma, tau = p[:4]
     lambda_ = p[4:].reshape(doses, plates)
 
@@ -59,7 +59,7 @@ def post(p):
 post_vars = ["sigma"]
 
 dof = 100
-problem = DirectProblem(salm, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 problem._bounds[0, 3] = 0  # tau bounded below by 0
 problem.setp(p0)

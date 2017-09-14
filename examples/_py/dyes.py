@@ -34,7 +34,7 @@ _, init = load('../Dyesinits.txt')
 init["mu"] = np.zeros(batches)
 p0, labels = define_pars(init, pars)
 
-def dyes(p):
+def nllf(p):
     theta, tau_with, tau_btw = p[:3]
     mu = p[3:]
 
@@ -55,7 +55,7 @@ def post(p):
 post_vars = ["sigma2.with", "sigma2.btw"]
 
 dof = 100
-problem = DirectProblem(dyes, p0, labels=labels, dof=dof)
+problem = DirectProblem(nllf, p0, labels=labels, dof=dof)
 
 problem._bounds[0, 1:3] = 0  # tau.with, tau.btw bounded below by 0
 problem.setp(p0)

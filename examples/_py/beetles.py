@@ -38,7 +38,7 @@ available_models = {
     }
 inv_p_model = inverse[available_models[model_name]]
 
-def beetles(pars):
+def nllf(pars):
     cost = 0
     alpha_star, beta = pars
     p = np.array([inv_p_model(alpha_star + beta*(xi-xbar)) for xi in x])
@@ -55,7 +55,7 @@ def post(pars):
     return np.vstack([alpha[None, :], beta[None, :], rhat])
 post_vars = ["alpha", "beta"] + ["rhat%d"%j for j in range(1, 9)]
 
-problem = DirectProblem(beetles, p0, labels=labels, dof=N-len(p0))
+problem = DirectProblem(nllf, p0, labels=labels, dof=N-len(p0))
 problem.setp(p0)
 problem.derive_vars = post, post_vars
 problem.visible_vars = post_vars

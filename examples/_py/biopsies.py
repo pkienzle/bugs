@@ -77,7 +77,7 @@ true = np.array([find_true(s) for s in biopsies])
 
 # dirichlet inputs must sum to 1; this means that we must use
 #    x[n] = 1 - sum(x[:n-1])
-#    if x[n] < 0, nllf = inf
+#    if x[n] < 0, return inf
 # so we can't use the normal parameter initialization:
 #p0, labels = define_pars(init, ["p", "error"])
 #active_index = ~np.isnan(p0)
