@@ -6,15 +6,19 @@
 # * add "temperature" parameter T for generating flattened posteriors
 # * limit status updates to once per second
 # * update to python 2/3 compatibility
+# * capture loglikelihood of the model
 
 from __future__ import print_function, division
 
+import sys
+import time
+
 from scipy.stats import uniform, gamma, poisson
+from scipy.special import gammaln, xlogy
 import matplotlib.pyplot as plt
 import numpy
 from numpy import log,exp
 from numpy.random import multinomial
-import time
 
 # fix the random seed for replicability.
 numpy.random.seed(123456789)
@@ -25,7 +29,7 @@ numpy.random.seed(123456789)
 N=50
 a=2
 b=1
-T=1
+T=1 if len(sys.argv) == 1 else float(sys.argv[1])
 
 # Change-point: where the intensity parameter changes.
 n=int(round(uniform.rvs()*N))
@@ -61,8 +65,12 @@ lambda2=gamma.rvs(a,scale=1./b)
 chain_n=numpy.array([0.]*(E-BURN_IN))
 chain_lambda1=numpy.array([0.]*(E-BURN_IN))
 chain_lambda2=numpy.array([0.]*(E-BURN_IN))
+chain_llf=numpy.array([0.]*(E-BURN_IN))
 
-def gamma_T(shape, scale, T=1):
+def multinomial_logpmf(x, n, p):
+	return gammaln(n+1) - numpy.sum(gammaln(x+1)) + numpy.sum(xlogy(x, p))
+
+def gamma_rvs_T(shape, scale, T=1):
 	# (k-1)/T = k' - 1 => k' = (k-1)/T + 1
 	shape_p = (shape - 1)/T + 1
 	scale_p = scale*T
@@ -78,8 +86,8 @@ for e in range(E):
 	# sample lambda1 and lambda2 from their posterior conditionals, Equation 8 and Equation 9, respectively.
 	#lambda1=gamma.rvs(a+sum(x[0:n]), scale=1./(n+b))
 	#lambda2=gamma.rvs(a+sum(x[n:N]), scale=1./(N-n+b))
-	lambda1=gamma_T(a+sum(x[0:n]), scale=1./(n+b), T=T)
-	lambda2=gamma_T(a+sum(x[n:N]), scale=1./(N-n+b), T=T)
+	lambda1=gamma_rvs_T(a+sum(x[0:n]), scale=1./(n+b), T=T)
+	lambda2=gamma_rvs_T(a+sum(x[n:N]), scale=1./(N-n+b), T=T)
 
 	# sample n, Equation 10
 	mult_n=numpy.array([0]*N)
@@ -88,11 +96,17 @@ for e in range(E):
 	mult_n=exp((mult_n-max(mult_n))/T)
 	n=numpy.where(multinomial(1,mult_n/sum(mult_n),size=1)==1)[1][0]
 
+	# compute log probabilty for tracking purposes
+	llf=(gamma.logpdf(lambda1, a+sum(x[0:n]), scale=1./(n+b))
+		+gamma.logpdf(lambda2, a+sum(x[n:N]), scale=1./(N-n+b))
+		+multinomial_logpmf(n, 1, mult_n/sum(mult_n)))
+
 	# store
 	if e>=BURN_IN:
 		chain_n[e-BURN_IN]=n
 		chain_lambda1[e-BURN_IN]=lambda1
 		chain_lambda2[e-BURN_IN]=lambda2
+		chain_llf[e-BURN_IN]=llf
 print("Done.")
 
 # Store the results in _gibbs_<T>.json
@@ -102,6 +116,7 @@ with open("_gibbs_%g.json"%T, "w") as fd:
 		'lambda1': chain_lambda1.tolist(),
 		'lambda2': chain_lambda2.tolist(),
 		'n': chain_n.tolist(),
+		'llf': chain_llf.tolist(),
 	}, fd)
 
 
@@ -115,7 +130,16 @@ ax4.set_xlim([0,12])
 ax4.set_xlabel('$\lambda_2$')
 ax5.hist(chain_n,bins=numpy.arange(51)+0.5,normed=True)
 ax5.set_xlabel('n')
-#ax5.set_xlim([1,50])
+ax5.set_xlim([1,50])
+
+plt.figure()
+plt.subplot(211)
+plt.hist(chain_llf, bins=50, normed=True)
+plt.xlabel("log(p)")
+plt.subplot(212)
+plt.plot(chain_llf)
+plt.xlabel('n')
+plt.ylabel('log(p)')
 plt.show()
 
 
