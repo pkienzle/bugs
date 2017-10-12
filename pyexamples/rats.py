@@ -79,7 +79,9 @@ problem._bounds[0,2*N+2] = 0
 problem._bounds[0,2*N+4] = 0
 problem.setp(p0)
 problem.derive_vars = post, post_vars
-problem.visible_vars = ["alpha0", "beta.c", "sigma"]
+problem.visible_vars = ["alpha0", "beta.c", "sigma",
+    "alpha[1]", "beta[1]", "alpha[2]", "beta[2]",
+    ]
 
 
 openbugs_result = """

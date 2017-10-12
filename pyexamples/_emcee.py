@@ -184,9 +184,6 @@ def main():
     nllf = problem.nllf
     bounds = problem._bounds
     labels = problem.labels()
-    visible_vars = getattr(problem, 'visible_vars', None)
-    integer_vars = getattr(problem, 'integer_vars', None)
-    derived_vars, derived_labels = getattr(problem, 'derive_vars', (None, None))
 
     # reload parfile if it exists, otherwise get initial parameters from model
     parfile = os.path.splitext(os.path.split(filename)[1])[0] + ".par"
@@ -214,6 +211,9 @@ def main():
             fd.write("%s %.15g\n"%(var, value))
 
     # process derived parameters
+    visible_vars = getattr(problem, 'visible_vars', None)
+    integer_vars = getattr(problem, 'integer_vars', None)
+    derived_vars, derived_labels = getattr(problem, 'derive_vars', (None, None))
     if derived_vars:
         samples = np.reshape(samples, (-1, dim))
         new_vars = np.asarray(derived_vars(samples.T)).T
